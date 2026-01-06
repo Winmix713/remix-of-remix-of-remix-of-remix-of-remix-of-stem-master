@@ -52,7 +52,7 @@ serve(async (req) => {
     // Use the run method with full model version for Demucs
     // The model identifier format: owner/model:version
     const output = await replicate.run(
-      "cjwbw/demucs:25a173108cff36ef9f80f854c162d01df9e6528be175794b81571e1f371ce2b0",
+      "cjwbw/demucs:abf8fe28e407afa6d8e41e86a759caccc0af8e49c3c68016006b62cb0968441e",
       {
         input: {
           audio: body.audioUrl,
