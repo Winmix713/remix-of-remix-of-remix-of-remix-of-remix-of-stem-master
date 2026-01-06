@@ -179,6 +179,7 @@ export function useStemSeparation(): UseStemSeparationResult {
 
     try {
       console.log('Calling stem-separation with model:', modelName);
+      console.log('Audio URL:', audioUrl);
 
       const { data, error: invokeError } = await supabase.functions.invoke('stem-separation', {
         body: {
@@ -195,19 +196,30 @@ export function useStemSeparation(): UseStemSeparationResult {
       }
 
       if (invokeError) {
+        console.error('Edge function invoke error:', invokeError);
         throw new Error(`Szétválasztás sikertelen: ${invokeError.message}`);
       }
 
-      if (data.error) {
-        throw new Error(data.error);
+      // Handle error responses from edge function
+      if (data?.error) {
+        console.error('Edge function returned error:', data);
+        const userMessage = getErrorMessage(data.errorType, data.error);
+        const details = data.details ? ` (${data.details})` : '';
+        throw new Error(userMessage + details);
       }
 
-      if (data.status !== 'succeeded') {
+      if (data?.status !== 'succeeded') {
+        console.error('Unexpected response status:', data?.status);
         throw new Error('Ismeretlen hiba történt a feldolgozás során');
       }
 
       // Extract stems from output
       const output = data.output;
+      if (!output || typeof output !== 'object') {
+        console.error('Invalid output format:', output);
+        throw new Error('Nem sikerült stem-eket kinyerni');
+      }
+
       const results: StemResult[] = [];
 
       for (const [key, url] of Object.entries(output)) {
@@ -221,10 +233,11 @@ export function useStemSeparation(): UseStemSeparationResult {
       }
 
       if (results.length === 0) {
-        throw new Error('Nem sikerült stem-eket kinyerni');
+        console.error('No stems were extracted from the response');
+        throw new Error('Nem sikerült stem-eket kinyerni a feldolgozás eredményéből');
       }
 
-      console.log('Separation completed, stems:', results.map(r => r.id));
+      console.log('Separation completed successfully, stems:', results.map(r => r.id));
       return results;
 
     } finally {
