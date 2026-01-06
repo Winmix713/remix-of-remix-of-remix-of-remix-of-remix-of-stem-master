@@ -32,29 +32,29 @@ export interface UseStemSeparationResult {
 }
 
 export const AVAILABLE_MODELS: SeparationModel[] = [
-  { 
-    id: 'htdemucs_ft', 
-    name: 'Demucs v4 (Fine-tuned)', 
+  {
+    id: 'htdemucs_ft',
+    name: 'Demucs v4 (Fine-tuned)',
     description: 'Legjobb minőség - 4 stem szétválasztás',
-    stems: ['vocals', 'drums', 'bass', 'other'] 
+    stems: ['vocals', 'drums', 'bass', 'other']
   },
-  { 
-    id: 'htdemucs', 
-    name: 'Demucs v4 (Standard)', 
+  {
+    id: 'htdemucs',
+    name: 'Demucs v4 (Standard)',
     description: 'Gyorsabb feldolgozás - 4 stem',
-    stems: ['vocals', 'drums', 'bass', 'other'] 
+    stems: ['vocals', 'drums', 'bass', 'other']
   },
-  { 
-    id: 'model_bs_roformer', 
-    name: 'BS-Roformer', 
+  {
+    id: 'model_bs_roformer',
+    name: 'BS-Roformer',
     description: 'Vokál + Hangszeres - 2 stem',
-    stems: ['vocals', 'instrumental'] 
+    stems: ['vocals', 'instrumental']
   },
-  { 
-    id: 'UVR_MDXNET_KARA_2', 
-    name: 'MDX-Net Karaoke', 
+  {
+    id: 'UVR_MDXNET_KARA_2',
+    name: 'MDX-Net Karaoke',
     description: 'Karaoke készítéshez optimalizált - 2 stem',
-    stems: ['vocals', 'instrumental'] 
+    stems: ['vocals', 'instrumental']
   },
 ];
 
@@ -68,7 +68,6 @@ const STEM_LABELS: Record<string, string> = {
   piano: 'Piano',
 };
 
-// Helper function to validate URL
 function isValidUrl(urlString: string): boolean {
   try {
     if (!urlString || typeof urlString !== 'string') {
@@ -84,7 +83,6 @@ function isValidUrl(urlString: string): boolean {
   }
 }
 
-// Helper function to map error types to user-friendly messages
 function getErrorMessage(errorType: string | undefined, originalError: string): string {
   const errorTypeMap: Record<string, string> = {
     'MISSING_BACKEND_CONFIG': 'A backend szerver nincs konfigurálva. Kérjük, ellenőrizze a telepítést.',
@@ -109,10 +107,11 @@ export function useStemSeparation(): UseStemSeparationResult {
   });
   const [stems, setStems] = useState<StemResult[]>([]);
   const [error, setError] = useState<string | null>(null);
-  
+
   const cancelledRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // ✅ JAVÍTOTT uploadToStorage - signed URL használatával
   const uploadToStorage = useCallback(async (file: File): Promise<string> => {
     const fileName = `${crypto.randomUUID()}-${file.name}`;
     const filePath = `uploads/${fileName}`;
@@ -134,24 +133,31 @@ export function useStemSeparation(): UseStemSeparationResult {
       throw new Error(`Feltöltés sikertelen: ${uploadError.message}`);
     }
 
-    const { data: { publicUrl } } = supabase.storage
+    // ✅ ÚJ: Signed URL használata getPublicUrl helyett
+    // Ez biztosítja, hogy az Edge Function mindig eléri a fájlt
+    const { data: urlData, error: urlError } = await supabase.storage
       .from('audio-files')
-      .getPublicUrl(filePath);
+      .createSignedUrl(filePath, 3600); // 1 óra lejárati idő
 
-    // Validate the returned URL
-    if (!publicUrl || !isValidUrl(publicUrl)) {
-      console.error('Invalid publicUrl returned from Supabase:', publicUrl);
+    if (urlError || !urlData) {
+      throw new Error(`Signed URL létrehozása sikertelen: ${urlError?.message || 'Unknown error'}`);
+    }
+
+    const signedUrl = urlData.signedUrl;
+
+    if (!signedUrl || !isValidUrl(signedUrl)) {
+      console.error('Invalid signedUrl returned from Supabase:', signedUrl);
       throw new Error(
-        `Tárolási URL érvénytelen: ${publicUrl}. A Supabase kliens konfigurációja lehet hibás (VITE_SUPABASE_URL).`
+        `Tárolási URL érvénytelen: ${signedUrl}. A Supabase kliens konfigurációja lehet hibás.`
       );
     }
 
-    console.log('Audio successfully uploaded to:', publicUrl);
-    return publicUrl;
+    console.log('Audio successfully uploaded, signed URL created:', signedUrl);
+    return signedUrl;
   }, []);
 
   const processSeparation = useCallback(async (
-    audioUrl: string, 
+    audioUrl: string,
     modelName: string = 'htdemucs_ft'
   ): Promise<StemResult[]> => {
     setProgress({
@@ -160,10 +166,8 @@ export function useStemSeparation(): UseStemSeparationResult {
       message: 'Stem szétválasztás indítása...',
     });
 
-    // Create abort controller for cancellation
     abortControllerRef.current = new AbortController();
 
-    // Simulate progress updates during long processing
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev.progress < 90) {
@@ -200,7 +204,6 @@ export function useStemSeparation(): UseStemSeparationResult {
         throw new Error(`Szétválasztás sikertelen: ${invokeError.message}`);
       }
 
-      // Handle error responses from edge function
       if (data?.error) {
         console.error('Edge function returned error:', data);
         const userMessage = getErrorMessage(data.errorType, data.error);
@@ -213,7 +216,6 @@ export function useStemSeparation(): UseStemSeparationResult {
         throw new Error('Ismeretlen hiba történt a feldolgozás során');
       }
 
-      // Extract stems from output
       const output = data.output;
       if (!output || typeof output !== 'object') {
         console.error('Invalid output format:', output);
@@ -295,7 +297,6 @@ export function useStemSeparation(): UseStemSeparationResult {
     cancelledRef.current = false;
 
     try {
-      // Upload file to storage
       const audioUrl = await uploadToStorage(audioFile);
       console.log('Successfully uploaded audio file. Proceeding to stem separation.');
 
