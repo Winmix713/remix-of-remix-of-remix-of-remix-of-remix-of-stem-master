@@ -13,10 +13,6 @@ serve(async (req) => {
 
   try {
     const AUDIO_SPLITTER_API_URL = Deno.env.get("AUDIO_SPLITTER_API_URL");
-    if (!AUDIO_SPLITTER_API_URL) {
-      console.error("AUDIO_SPLITTER_API_URL is not set");
-      throw new Error("AUDIO_SPLITTER_API_URL is not configured. Please set up your FastAPI backend URL.");
-    }
 
     const body = await req.json();
     console.log("Request body:", JSON.stringify(body));
@@ -35,6 +31,48 @@ serve(async (req) => {
 
     console.log("Starting stem separation for:", audioUrl);
     console.log("Using model:", modelName);
+
+    // DEVELOPMENT MODE: Mock response when backend is not configured
+    if (!AUDIO_SPLITTER_API_URL) {
+      console.warn("AUDIO_SPLITTER_API_URL is not set - using MOCK mode for development");
+
+      // Simulate processing delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Determine stems based on model
+      let stems: Record<string, string> = {};
+
+      if (modelName === "htdemucs_ft" || modelName === "htdemucs") {
+        // 4-stem separation
+        stems = {
+          vocals: audioUrl,
+          drums: audioUrl,
+          bass: audioUrl,
+          other: audioUrl,
+        };
+      } else {
+        // 2-stem separation (vocals + instrumental)
+        stems = {
+          vocals: audioUrl,
+          instrumental: audioUrl,
+        };
+      }
+
+      console.log("MOCK: Returning stems for model:", modelName);
+
+      return new Response(
+        JSON.stringify({
+          output: stems,
+          status: "succeeded",
+          processing_time: 2.0,
+          mock: true,
+          message: "This is a MOCK response. Configure AUDIO_SPLITTER_API_URL for real separation."
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
 
     // Download the audio file from the URL
     console.log("Downloading audio file...");
