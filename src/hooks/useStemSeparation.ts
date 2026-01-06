@@ -138,6 +138,15 @@ export function useStemSeparation(): UseStemSeparationResult {
       .from('audio-files')
       .getPublicUrl(filePath);
 
+    // Validate the returned URL
+    if (!publicUrl || !isValidUrl(publicUrl)) {
+      console.error('Invalid publicUrl returned from Supabase:', publicUrl);
+      throw new Error(
+        `Tárolási URL érvénytelen: ${publicUrl}. A Supabase kliens konfigurációja lehet hibás (VITE_SUPABASE_URL).`
+      );
+    }
+
+    console.log('Audio successfully uploaded to:', publicUrl);
     return publicUrl;
   }, []);
 
