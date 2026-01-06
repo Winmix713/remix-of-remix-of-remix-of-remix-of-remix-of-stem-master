@@ -49,24 +49,27 @@ serve(async (req) => {
 
     console.log("Starting stem separation for:", body.audioUrl);
 
-    // Create prediction with Demucs model
-    const prediction = await replicate.predictions.create({
-      model: "cjwbw/demucs",
-      input: {
-        audio: body.audioUrl,
-        model_name: body.modelName || "htdemucs",
-        stem: body.stem || undefined, // Optional: only separate specific stem
-        clip_mode: body.clipMode || "rescale",
-        shifts: body.shifts || 1,
-        overlap: body.overlap || 0.25,
-        mp3_bitrate: body.mp3Bitrate || 320,
-        output_format: body.outputFormat || "mp3",
-      },
-    });
+    // Use the run method with full model version for Demucs
+    // The model identifier format: owner/model:version
+    const output = await replicate.run(
+      "cjwbw/demucs:25a173108cff36ef9f80f854c162d01df9e6528be175794b81571e1f371ce2b0",
+      {
+        input: {
+          audio: body.audioUrl,
+          model_name: body.modelName || "htdemucs",
+          stem: body.stem || undefined,
+          clip_mode: body.clipMode || "rescale",
+          shifts: body.shifts || 1,
+          overlap: body.overlap || 0.25,
+          mp3_bitrate: body.mp3Bitrate || 320,
+          output_format: body.outputFormat || "mp3",
+        },
+      }
+    );
 
-    console.log("Created prediction:", prediction.id);
+    console.log("Stem separation completed:", JSON.stringify(output));
 
-    return new Response(JSON.stringify(prediction), {
+    return new Response(JSON.stringify({ output, status: "succeeded" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
