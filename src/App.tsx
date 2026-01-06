@@ -6,11 +6,13 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "@/lib/i18n";
 
 // Pages
+import Auth from "./pages/Auth";
 import Library from "./pages/Library";
 import Upload from "./pages/Upload";
 import Configure from "./pages/Configure";
 import Edit from "./pages/Edit";
 import NotFound from "./pages/NotFound";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -21,11 +23,14 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* Main routes - no authentication required */}
-          <Route path="/library" element={<Library />} />
-          <Route path="/upload" element={<Upload />} />
-          <Route path="/configure/:id" element={<Configure />} />
-          <Route path="/edit/:id" element={<Edit />} />
+          {/* Auth route */}
+          <Route path="/auth" element={<Auth />} />
+          
+          {/* Protected routes - authentication required */}
+          <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
+          <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
+          <Route path="/configure/:id" element={<ProtectedRoute><Configure /></ProtectedRoute>} />
+          <Route path="/edit/:id" element={<ProtectedRoute><Edit /></ProtectedRoute>} />
           
           {/* Redirect root to library */}
           <Route path="/" element={<Navigate to="/library" replace />} />
