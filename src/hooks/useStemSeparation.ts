@@ -68,6 +68,38 @@ const STEM_LABELS: Record<string, string> = {
   piano: 'Piano',
 };
 
+// Helper function to validate URL
+function isValidUrl(urlString: string): boolean {
+  try {
+    if (!urlString || typeof urlString !== 'string') {
+      return false;
+    }
+    if (urlString.includes('undefined')) {
+      return false;
+    }
+    new URL(urlString);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Helper function to map error types to user-friendly messages
+function getErrorMessage(errorType: string | undefined, originalError: string): string {
+  const errorTypeMap: Record<string, string> = {
+    'MISSING_BACKEND_CONFIG': 'A backend szerver nincs konfigurálva. Kérjük, ellenőrizze a telepítést.',
+    'INVALID_BACKEND_URL': 'A backend szerver URL-je érvénytelen.',
+    'BACKEND_CONNECTION_FAILED': 'A backend szerver nem elérhető. Kérjük, győződjön meg, hogy a FastAPI szerver fut.',
+    'AUDIO_DOWNLOAD_FAILED': 'Az audio fájl letöltése sikertelen.',
+    'AUDIO_DOWNLOAD_HTTP_ERROR': 'Az audio fájl már nem elérhető vagy nem érvényes.',
+    'INVALID_AUDIO_URL': 'Az audio URL érvénytelen. A fájl feltöltése sikertelen lehet.',
+    'PROCESSING_FAILED': 'Az audio feldolgozása sikertelen. Kérjük, próbálja újra.',
+    'UNEXPECTED_ERROR': 'Váratlan hiba történt. Kérjük, próbálja újra később.',
+  };
+
+  return errorTypeMap[errorType] || originalError || 'Feldolgozási hiba történt.';
+}
+
 export function useStemSeparation(): UseStemSeparationResult {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState<SeparationProgress>({
