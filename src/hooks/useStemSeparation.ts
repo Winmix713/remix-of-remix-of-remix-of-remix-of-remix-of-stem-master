@@ -267,9 +267,10 @@ export function useStemSeparation(): UseStemSeparationResult {
 
       return results;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ismeretlen hiba';
+      const errorMessage = err instanceof Error ? err.message : 'Ismeretlen hiba történt.';
 
       if (errorMessage !== 'Cancelled') {
+        console.error('Separation error:', err);
         setError(errorMessage);
         setProgress({
           stage: 'error',
