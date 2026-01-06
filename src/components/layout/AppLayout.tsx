@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, forwardRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Music2, Upload, Library, HelpCircle } from 'lucide-react';
@@ -10,7 +10,7 @@ interface AppLayoutProps {
   children: ReactNode;
 }
 
-export function AppLayout({ children }: AppLayoutProps) {
+export const AppLayout = forwardRef<HTMLDivElement, AppLayoutProps>(function AppLayout({ children }, ref) {
   const { t } = useTranslation();
   const location = useLocation();
 
@@ -20,7 +20,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div ref={ref} className="min-h-screen flex flex-col bg-background">
       {/* Top Navigation */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
@@ -72,4 +72,4 @@ export function AppLayout({ children }: AppLayoutProps) {
       </main>
     </div>
   );
-}
+});
