@@ -297,7 +297,7 @@ export function useStemSeparation(): UseStemSeparationResult {
     try {
       // Upload file to storage
       const audioUrl = await uploadToStorage(audioFile);
-      console.log('Uploaded to:', audioUrl);
+      console.log('Successfully uploaded audio file. Proceeding to stem separation.');
 
       const results = await processSeparation(audioUrl, modelName);
 
@@ -310,9 +310,10 @@ export function useStemSeparation(): UseStemSeparationResult {
 
       return results;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Ismeretlen hiba';
+      const errorMessage = err instanceof Error ? err.message : 'Ismeretlen hiba történt.';
 
       if (errorMessage !== 'Cancelled') {
+        console.error('Processing error:', err);
         setError(errorMessage);
         setProgress({
           stage: 'error',
