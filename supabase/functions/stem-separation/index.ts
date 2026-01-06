@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Replicate from "https://esm.sh/replicate@0.25.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,31 +12,18 @@ serve(async (req) => {
   }
 
   try {
-    const REPLICATE_API_KEY = Deno.env.get("REPLICATE_API_KEY");
-    if (!REPLICATE_API_KEY) {
-      console.error("REPLICATE_API_KEY is not set");
-      throw new Error("REPLICATE_API_KEY is not configured");
+    const AUDIO_SPLITTER_API_URL = Deno.env.get("AUDIO_SPLITTER_API_URL");
+    if (!AUDIO_SPLITTER_API_URL) {
+      console.error("AUDIO_SPLITTER_API_URL is not set");
+      throw new Error("AUDIO_SPLITTER_API_URL is not configured. Please set up your FastAPI backend URL.");
     }
-
-    const replicate = new Replicate({
-      auth: REPLICATE_API_KEY,
-    });
 
     const body = await req.json();
     console.log("Request body:", JSON.stringify(body));
 
-    // Check prediction status
-    if (body.predictionId) {
-      console.log("Checking status for prediction:", body.predictionId);
-      const prediction = await replicate.predictions.get(body.predictionId);
-      console.log("Prediction status:", prediction.status);
-      return new Response(JSON.stringify(prediction), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const { audioUrl, modelName = "htdemucs_ft", outputFormat = "mp3" } = body;
 
-    // Start new stem separation
-    if (!body.audioUrl) {
+    if (!audioUrl) {
       return new Response(
         JSON.stringify({ error: "Missing required field: audioUrl" }),
         {
@@ -47,31 +33,75 @@ serve(async (req) => {
       );
     }
 
-    console.log("Starting stem separation for:", body.audioUrl);
+    console.log("Starting stem separation for:", audioUrl);
+    console.log("Using model:", modelName);
 
-    // Use the run method with full model version for Demucs
-    // The model identifier format: owner/model:version
-    const output = await replicate.run(
-      "cjwbw/demucs:abf8fe28e407afa6d8e41e86a759caccc0af8e49c3c68016006b62cb0968441e",
+    // Download the audio file from the URL
+    console.log("Downloading audio file...");
+    const audioResponse = await fetch(audioUrl);
+    if (!audioResponse.ok) {
+      throw new Error(`Failed to download audio file: ${audioResponse.status}`);
+    }
+    const audioBlob = await audioResponse.blob();
+    
+    // Get filename from URL
+    const urlParts = audioUrl.split("/");
+    let filename = urlParts[urlParts.length - 1] || "audio.mp3";
+    filename = decodeURIComponent(filename);
+
+    // Create FormData to send to FastAPI
+    const formData = new FormData();
+    formData.append("file", audioBlob, filename);
+    formData.append("model_name", modelName);
+    formData.append("output_format", outputFormat);
+
+    console.log("Sending to FastAPI backend:", AUDIO_SPLITTER_API_URL);
+
+    // Call the FastAPI backend
+    const separationResponse = await fetch(`${AUDIO_SPLITTER_API_URL}/api/separate`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!separationResponse.ok) {
+      const errorText = await separationResponse.text();
+      console.error("FastAPI error:", errorText);
+      throw new Error(`Separation failed: ${separationResponse.status} - ${errorText}`);
+    }
+
+    const result = await separationResponse.json();
+    console.log("Stem separation completed:", JSON.stringify(result));
+
+    // Transform the response to match expected format
+    // FastAPI returns: { stems: { vocals: "base64...", drums: "base64...", ... }, processing_time: 123 }
+    const output: Record<string, string> = {};
+    
+    if (result.stems) {
+      for (const [stemName, stemData] of Object.entries(result.stems)) {
+        if (typeof stemData === "string") {
+          // If it's a base64 string, create a data URL
+          if (stemData.startsWith("data:")) {
+            output[stemName] = stemData;
+          } else {
+            output[stemName] = `data:audio/${outputFormat};base64,${stemData}`;
+          }
+        } else if (typeof stemData === "object" && stemData !== null && "url" in stemData) {
+          // If it's an object with a URL
+          output[stemName] = (stemData as { url: string }).url;
+        }
+      }
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        output, 
+        status: "succeeded",
+        processing_time: result.processing_time 
+      }),
       {
-        input: {
-          audio: body.audioUrl,
-          model_name: body.modelName || "htdemucs",
-          stem: body.stem || undefined,
-          clip_mode: body.clipMode || "rescale",
-          shifts: body.shifts || 1,
-          overlap: body.overlap || 0.25,
-          mp3_bitrate: body.mp3Bitrate || 320,
-          output_format: body.outputFormat || "mp3",
-        },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
-
-    console.log("Stem separation completed:", JSON.stringify(output));
-
-    return new Response(JSON.stringify({ output, status: "succeeded" }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
   } catch (error) {
     console.error("Error in stem-separation function:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";

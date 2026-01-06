@@ -1,12 +1,12 @@
 import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, CheckCircle, XCircle, Download, Play, Pause, Music2 } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Download, Play, Pause, Music2, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { useStemSeparation, StemResult } from '@/hooks/useStemSeparation';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useStemSeparation, StemResult, AVAILABLE_MODELS } from '@/hooks/useStemSeparation';
 
 interface StemSeparatorProps {
   audioUrl?: string;
@@ -15,18 +15,12 @@ interface StemSeparatorProps {
   onError?: (error: string) => void;
 }
 
-const AVAILABLE_STEMS = [
-  { id: 'vocals', label: 'Vocals', color: 'bg-pink-500' },
-  { id: 'drums', label: 'Drums', color: 'bg-orange-500' },
-  { id: 'bass', label: 'Bass', color: 'bg-purple-500' },
-  { id: 'other', label: 'Other', color: 'bg-blue-500' },
-];
-
 const STEM_COLORS: Record<string, string> = {
   vocals: 'bg-pink-500',
   drums: 'bg-orange-500',
   bass: 'bg-purple-500',
   other: 'bg-blue-500',
+  instrumental: 'bg-emerald-500',
   guitar: 'bg-green-500',
   piano: 'bg-cyan-500',
 };
@@ -37,27 +31,21 @@ export function StemSeparator({
   onComplete,
   onError,
 }: StemSeparatorProps) {
-  const { isProcessing, progress, stems, error, separate, separateFromUrl, cancel } = useStemSeparation();
-  const [selectedStems, setSelectedStems] = useState<string[]>(['vocals', 'drums', 'bass', 'other']);
+  const { isProcessing, progress, stems, error, availableModels, separate, separateFromUrl, cancel } = useStemSeparation();
+  const [selectedModel, setSelectedModel] = useState<string>('htdemucs_ft');
   const [playingStem, setPlayingStem] = useState<string | null>(null);
   const audioRefs = useRef<Map<string, HTMLAudioElement>>(new Map());
 
-  const handleStemToggle = (stemId: string) => {
-    setSelectedStems(prev =>
-      prev.includes(stemId)
-        ? prev.filter(s => s !== stemId)
-        : [...prev, stemId]
-    );
-  };
+  const currentModel = availableModels.find(m => m.id === selectedModel);
 
   const handleStart = useCallback(async () => {
     try {
       let results: StemResult[];
       
       if (audioFile) {
-        results = await separate(audioFile);
+        results = await separate(audioFile, selectedModel);
       } else if (audioUrl) {
-        results = await separateFromUrl(audioUrl, selectedStems);
+        results = await separateFromUrl(audioUrl, selectedModel);
       } else {
         throw new Error('No audio source provided');
       }
@@ -68,7 +56,7 @@ export function StemSeparator({
         onError?.(err.message);
       }
     }
-  }, [audioFile, audioUrl, selectedStems, separate, separateFromUrl, onComplete, onError]);
+  }, [audioFile, audioUrl, selectedModel, separate, separateFromUrl, onComplete, onError]);
 
   const handlePlayStem = useCallback((stem: StemResult) => {
     // Stop currently playing
@@ -132,35 +120,48 @@ export function StemSeparator({
         </CardTitle>
         <CardDescription>
           {progress.stage === 'complete'
-            ? 'Your stems are ready!'
-            : 'Powered by Demucs AI - separate vocals, drums, bass and more'}
+            ? 'A stem-ek elkészültek!'
+            : 'AI-alapú szétválasztás - vokál, dob, basszus és egyebek'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Stem selection */}
+        {/* Model selection */}
         {!isProcessing && progress.stage !== 'complete' && (
           <div className="space-y-3">
-            <Label className="text-sm font-medium">Select stems to extract:</Label>
-            <div className="grid grid-cols-2 gap-3">
-              {AVAILABLE_STEMS.map((stem) => (
-                <div
-                  key={stem.id}
-                  className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                >
-                  <Checkbox
-                    id={stem.id}
-                    checked={selectedStems.includes(stem.id)}
-                    onCheckedChange={() => handleStemToggle(stem.id)}
-                  />
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-full ${stem.color}`} />
-                    <Label htmlFor={stem.id} className="cursor-pointer">
-                      {stem.label}
-                    </Label>
-                  </div>
-                </div>
-              ))}
+            <div className="flex items-center gap-2">
+              <Settings2 className="h-4 w-4 text-muted-foreground" />
+              <Label className="text-sm font-medium">Modell kiválasztása:</Label>
             </div>
+            <Select value={selectedModel} onValueChange={setSelectedModel}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Válassz modellt" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableModels.map((model) => (
+                  <SelectItem key={model.id} value={model.id}>
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">{model.name}</span>
+                      <span className="text-xs text-muted-foreground">{model.description}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Show expected stems */}
+            {currentModel && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {currentModel.stems.map((stemId) => (
+                  <div 
+                    key={stemId}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted text-xs"
+                  >
+                    <div className={`w-2 h-2 rounded-full ${STEM_COLORS[stemId] || 'bg-gray-500'}`} />
+                    <span className="capitalize">{stemId}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -177,7 +178,7 @@ export function StemSeparator({
             </div>
             <Progress value={progress.progress} className="h-2" />
             <p className="text-xs text-muted-foreground text-center">
-              Separation typically takes 1-3 minutes depending on track length
+              A szétválasztás általában 1-5 percet vesz igénybe a zeneszám hosszától függően
             </p>
             <Button
               variant="outline"
@@ -185,7 +186,7 @@ export function StemSeparator({
               onClick={cancel}
               className="w-full"
             >
-              Cancel
+              Megszakítás
             </Button>
           </motion.div>
         )}
@@ -199,7 +200,7 @@ export function StemSeparator({
           >
             <XCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
             <div className="text-sm">
-              <p className="font-medium text-destructive">Processing failed</p>
+              <p className="font-medium text-destructive">Feldolgozás sikertelen</p>
               <p className="text-muted-foreground">{error}</p>
             </div>
           </motion.div>
@@ -257,11 +258,11 @@ export function StemSeparator({
         {!isProcessing && progress.stage !== 'complete' && (
           <Button
             onClick={handleStart}
-            disabled={!hasSource || selectedStems.length === 0}
+            disabled={!hasSource}
             className="w-full gap-2"
           >
             <Play className="h-4 w-4" />
-            Start Separation
+            Szétválasztás indítása
           </Button>
         )}
 
@@ -273,7 +274,7 @@ export function StemSeparator({
             className="w-full gap-2"
           >
             <Download className="h-4 w-4" />
-            Download All Stems
+            Összes stem letöltése
           </Button>
         )}
       </CardContent>

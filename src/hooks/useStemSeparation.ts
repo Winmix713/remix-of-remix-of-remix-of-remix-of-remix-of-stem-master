@@ -13,26 +13,60 @@ export interface SeparationProgress {
   message: string;
 }
 
+export interface SeparationModel {
+  id: string;
+  name: string;
+  description: string;
+  stems: string[];
+}
+
 export interface UseStemSeparationResult {
   isProcessing: boolean;
   progress: SeparationProgress;
   stems: StemResult[];
   error: string | null;
-  separate: (audioFile: File) => Promise<StemResult[]>;
-  separateFromUrl: (audioUrl: string, selectedStems?: string[]) => Promise<StemResult[]>;
+  availableModels: SeparationModel[];
+  separate: (audioFile: File, modelName?: string) => Promise<StemResult[]>;
+  separateFromUrl: (audioUrl: string, modelName?: string) => Promise<StemResult[]>;
   cancel: () => void;
 }
+
+export const AVAILABLE_MODELS: SeparationModel[] = [
+  { 
+    id: 'htdemucs_ft', 
+    name: 'Demucs v4 (Fine-tuned)', 
+    description: 'Legjobb minőség - 4 stem szétválasztás',
+    stems: ['vocals', 'drums', 'bass', 'other'] 
+  },
+  { 
+    id: 'htdemucs', 
+    name: 'Demucs v4 (Standard)', 
+    description: 'Gyorsabb feldolgozás - 4 stem',
+    stems: ['vocals', 'drums', 'bass', 'other'] 
+  },
+  { 
+    id: 'model_bs_roformer', 
+    name: 'BS-Roformer', 
+    description: 'Vokál + Hangszeres - 2 stem',
+    stems: ['vocals', 'instrumental'] 
+  },
+  { 
+    id: 'UVR_MDXNET_KARA_2', 
+    name: 'MDX-Net Karaoke', 
+    description: 'Karaoke készítéshez optimalizált - 2 stem',
+    stems: ['vocals', 'instrumental'] 
+  },
+];
 
 const STEM_LABELS: Record<string, string> = {
   vocals: 'Vocals',
   drums: 'Drums',
   bass: 'Bass',
   other: 'Other',
+  instrumental: 'Instrumental',
   guitar: 'Guitar',
   piano: 'Piano',
 };
-
-const POLL_INTERVAL = 2000; // 2 seconds
 
 export function useStemSeparation(): UseStemSeparationResult {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -45,7 +79,7 @@ export function useStemSeparation(): UseStemSeparationResult {
   const [error, setError] = useState<string | null>(null);
   
   const cancelledRef = useRef(false);
-  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const uploadToStorage = useCallback(async (file: File): Promise<string> => {
     const fileName = `${crypto.randomUUID()}-${file.name}`;
@@ -54,7 +88,7 @@ export function useStemSeparation(): UseStemSeparationResult {
     setProgress({
       stage: 'uploading',
       progress: 10,
-      message: 'Uploading audio file...',
+      message: 'Feltöltés folyamatban...',
     });
 
     const { error: uploadError } = await supabase.storage
@@ -65,7 +99,7 @@ export function useStemSeparation(): UseStemSeparationResult {
       });
 
     if (uploadError) {
-      throw new Error(`Upload failed: ${uploadError.message}`);
+      throw new Error(`Feltöltés sikertelen: ${uploadError.message}`);
     }
 
     const { data: { publicUrl } } = supabase.storage
@@ -75,104 +109,92 @@ export function useStemSeparation(): UseStemSeparationResult {
     return publicUrl;
   }, []);
 
-  const startSeparation = useCallback(async (audioUrl: string, stem?: string) => {
+  const processSeparation = useCallback(async (
+    audioUrl: string, 
+    modelName: string = 'htdemucs_ft'
+  ): Promise<StemResult[]> => {
     setProgress({
       stage: 'processing',
-      progress: 20,
-      message: 'Starting stem separation...',
+      progress: 30,
+      message: 'Stem szétválasztás indítása...',
     });
 
-    const { data, error: invokeError } = await supabase.functions.invoke('stem-separation', {
-      body: {
-        audioUrl,
-        stem,
-        modelName: 'htdemucs',
-        outputFormat: 'mp3',
-      },
-    });
+    // Create abort controller for cancellation
+    abortControllerRef.current = new AbortController();
 
-    if (invokeError) {
-      throw new Error(`Failed to start separation: ${invokeError.message}`);
-    }
+    // Simulate progress updates during long processing
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev.progress < 90) {
+          return {
+            ...prev,
+            progress: Math.min(prev.progress + 5, 90),
+            message: 'Szétválasztás folyamatban (ez eltarthat 1-5 percig)...',
+          };
+        }
+        return prev;
+      });
+    }, 5000);
 
-    if (data.error) {
-      throw new Error(data.error);
-    }
+    try {
+      console.log('Calling stem-separation with model:', modelName);
 
-    return data.id as string;
-  }, []);
+      const { data, error: invokeError } = await supabase.functions.invoke('stem-separation', {
+        body: {
+          audioUrl,
+          modelName,
+          outputFormat: 'mp3',
+        },
+      });
 
-  const pollPrediction = useCallback(async (predictionId: string): Promise<StemResult[]> => {
-    const poll = async (): Promise<StemResult[]> => {
+      clearInterval(progressInterval);
+
       if (cancelledRef.current) {
         throw new Error('Cancelled');
       }
 
-      const { data, error: invokeError } = await supabase.functions.invoke('stem-separation', {
-        body: { predictionId },
-      });
-
       if (invokeError) {
-        throw new Error(`Failed to check status: ${invokeError.message}`);
+        throw new Error(`Szétválasztás sikertelen: ${invokeError.message}`);
       }
 
-      const status = data.status;
-      console.log('Prediction status:', status);
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
-      if (status === 'succeeded') {
-        // Extract stems from output
-        const output = data.output;
-        const results: StemResult[] = [];
+      if (data.status !== 'succeeded') {
+        throw new Error('Ismeretlen hiba történt a feldolgozás során');
+      }
 
-        for (const [key, url] of Object.entries(output)) {
-          if (url && typeof url === 'string') {
-            results.push({
-              id: key,
-              label: STEM_LABELS[key] || key,
-              url,
-            });
-          }
+      // Extract stems from output
+      const output = data.output;
+      const results: StemResult[] = [];
+
+      for (const [key, url] of Object.entries(output)) {
+        if (url && typeof url === 'string') {
+          results.push({
+            id: key,
+            label: STEM_LABELS[key] || key,
+            url,
+          });
         }
-
-        return results;
       }
 
-      if (status === 'failed' || status === 'canceled') {
-        throw new Error(data.error || 'Separation failed');
+      if (results.length === 0) {
+        throw new Error('Nem sikerült stem-eket kinyerni');
       }
 
-      // Update progress based on status
-      let progressValue = 30;
-      let message = 'Processing...';
+      console.log('Separation completed, stems:', results.map(r => r.id));
+      return results;
 
-      if (status === 'starting') {
-        progressValue = 25;
-        message = 'Starting AI model...';
-      } else if (status === 'processing') {
-        progressValue = 50;
-        message = 'Separating stems (this may take a few minutes)...';
-      }
-
-      setProgress({
-        stage: 'processing',
-        progress: progressValue,
-        message,
-      });
-
-      // Continue polling
-      await new Promise<void>((resolve) => {
-        pollTimeoutRef.current = setTimeout(resolve, POLL_INTERVAL);
-      });
-
-      return poll();
-    };
-
-    return poll();
+    } finally {
+      clearInterval(progressInterval);
+      abortControllerRef.current = null;
+    }
   }, []);
 
   const separateFromUrl = useCallback(async (
     audioUrl: string,
-    selectedStems?: string[]
+    modelName: string = 'htdemucs_ft'
   ): Promise<StemResult[]> => {
     setIsProcessing(true);
     setError(null);
@@ -180,31 +202,18 @@ export function useStemSeparation(): UseStemSeparationResult {
     cancelledRef.current = false;
 
     try {
-      // If only one stem is selected, use the stem parameter for faster processing
-      const stem = selectedStems?.length === 1 ? selectedStems[0] : undefined;
+      const results = await processSeparation(audioUrl, modelName);
 
-      // Start separation
-      const predictionId = await startSeparation(audioUrl, stem);
-      console.log('Started prediction:', predictionId);
-
-      // Poll for results
-      const results = await pollPrediction(predictionId);
-
-      // Filter results if specific stems were selected
-      const filteredResults = selectedStems?.length
-        ? results.filter(r => selectedStems.includes(r.id))
-        : results;
-
-      setStems(filteredResults);
+      setStems(results);
       setProgress({
         stage: 'complete',
         progress: 100,
-        message: 'Separation complete!',
+        message: 'Szétválasztás kész!',
       });
 
-      return filteredResults;
+      return results;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      const errorMessage = err instanceof Error ? err.message : 'Ismeretlen hiba';
 
       if (errorMessage !== 'Cancelled') {
         setError(errorMessage);
@@ -219,9 +228,12 @@ export function useStemSeparation(): UseStemSeparationResult {
     } finally {
       setIsProcessing(false);
     }
-  }, [startSeparation, pollPrediction]);
+  }, [processSeparation]);
 
-  const separate = useCallback(async (audioFile: File): Promise<StemResult[]> => {
+  const separate = useCallback(async (
+    audioFile: File,
+    modelName: string = 'htdemucs_ft'
+  ): Promise<StemResult[]> => {
     setIsProcessing(true);
     setError(null);
     setStems([]);
@@ -232,23 +244,18 @@ export function useStemSeparation(): UseStemSeparationResult {
       const audioUrl = await uploadToStorage(audioFile);
       console.log('Uploaded to:', audioUrl);
 
-      // Start separation
-      const predictionId = await startSeparation(audioUrl);
-      console.log('Started prediction:', predictionId);
-
-      // Poll for results
-      const results = await pollPrediction(predictionId);
+      const results = await processSeparation(audioUrl, modelName);
 
       setStems(results);
       setProgress({
         stage: 'complete',
         progress: 100,
-        message: 'Separation complete!',
+        message: 'Szétválasztás kész!',
       });
 
       return results;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      const errorMessage = err instanceof Error ? err.message : 'Ismeretlen hiba';
 
       if (errorMessage !== 'Cancelled') {
         setError(errorMessage);
@@ -263,18 +270,18 @@ export function useStemSeparation(): UseStemSeparationResult {
     } finally {
       setIsProcessing(false);
     }
-  }, [uploadToStorage, startSeparation, pollPrediction]);
+  }, [uploadToStorage, processSeparation]);
 
   const cancel = useCallback(() => {
     cancelledRef.current = true;
-    if (pollTimeoutRef.current) {
-      clearTimeout(pollTimeoutRef.current);
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
     setIsProcessing(false);
     setProgress({
       stage: 'idle',
       progress: 0,
-      message: 'Cancelled',
+      message: 'Megszakítva',
     });
   }, []);
 
@@ -283,6 +290,7 @@ export function useStemSeparation(): UseStemSeparationResult {
     progress,
     stems,
     error,
+    availableModels: AVAILABLE_MODELS,
     separate,
     separateFromUrl,
     cancel,
