@@ -1,0 +1,692 @@
+[toolbar]
+"<style>
+        /* A fő alkalmazásból átemelt design system változók */
+        :root {
+            --shade-01: #fcfcfc;
+            --shade-02: #f8f7f7;
+            --shade-03: #f1f1f1;
+            --shade-04: #ececec;
+            --shade-05: #e2e2e2;
+            --shade-06: #7b7b7b;
+            --shade-07: #323232;
+            --shade-09: #121212;
+            --color-primary: var(--shade-09);
+            --color-secondary: var(--shade-06);
+            --color-surface-01: var(--shade-01);
+            --color-surface-03: var(--shade-03);
+            --color-s-01: var(--shade-04);
+            --color-s-02: var(--shade-05);
+            --spacing: 0.25rem;
+            --radius-xl: 0.75rem;
+            --radius-lg: 0.5rem;
+            --box-shadow-toolbar: 0px 1px 4px -4px rgba(0,0,0,0.07), 0px 8px 16px -12px rgba(0,0,0,0.13);
+        }
+
+        /* Demo háttér */
+        body {
+            background-color: #f0f2f5;
+            font-family: sans-serif;
+            padding-top: 5rem; /* Hely a fixált toolbarnak */
+        }
+
+        /* --- TOOLBAR REFAKTORÁLT CSS --- */
+
+        .toolbar {
+            position: fixed;
+            top: calc(var(--spacing) * 3);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: flex;
+            background: var(--color-surface-01);
+            border: 1px solid var(--color-s-01);
+            border-radius: calc(var(--spacing) * 5); /* 1.25rem */
+            box-shadow: var(--box-shadow-toolbar);
+            padding: calc(var(--spacing) * 2);
+            gap: calc(var(--spacing) * 2);
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 2);
+        }
+
+        .toolbar-btn, .zoom-selector-btn {
+            position: relative; /* Tooltip pozicionáláshoz */
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: calc(var(--spacing) * 10);  /* 2.5rem */
+            height: calc(var(--spacing) * 10); /* 2.5rem */
+            border: 1px solid transparent;
+            background-color: transparent;
+            border-radius: var(--radius-xl);
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .toolbar-btn:hover, .zoom-selector-btn:hover {
+            background-color: var(--color-surface-03);
+        }
+
+        .toolbar-btn.active {
+            background-color: var(--color-surface-03);
+            border-color: var(--color-s-02);
+            box-shadow: 0 -1px 3px 0px rgba(18,18,18,0.15) inset, 0px 1.25px 1px 0px #FFF inset;
+        }
+
+        .toolbar-btn.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background-color: transparent; /* Felülírja a hovert */
+        }
+
+        .toolbar-btn svg, .zoom-selector-btn svg {
+            width: calc(var(--spacing) * 5); /* 1.25rem */
+            height: calc(var(--spacing) * 5);
+            fill: var(--color-primary);
+        }
+        
+        .zoom-selector-btn {
+            min-width: calc(var(--spacing) * 22);
+            padding: 0 calc(var(--spacing) * 3);
+            justify-content: space-between;
+            background-color: var(--color-surface-03);
+            border-color: var(--color-s-01);
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--color-primary);
+        }
+
+        .zoom-selector-btn svg {
+            width: calc(var(--spacing) * 4);
+            height: calc(var(--spacing) * 4);
+            fill: var(--color-secondary);
+        }
+        
+        .zoom-selector-btn:hover {
+            border-color: rgba(18, 18, 18, 0.1);
+        }
+
+        .primary-btn {
+            position: relative;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            height: calc(var(--spacing) * 10);
+            padding: 0 calc(var(--spacing) * 6);
+            border: none;
+            border-radius: var(--radius-xl);
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            background: linear-gradient(to bottom, #E5E5E5, #E2E2E2);
+            box-shadow: 0 3px 4px -1px rgba(0,0,0,0.15), 0px 1px 0px 0px rgba(255,255,255,0.33) inset, 0px 0px 0px 1px #D4D4D4;
+            cursor: pointer;
+            overflow: hidden; /* A ::after elemhez */
+        }
+
+        .primary-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: var(--radius-xl);
+            background-color: rgba(255, 255, 255, 0.3);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .primary-btn:hover::after {
+            opacity: 1;
+        }
+        
+        /* Tooltip stílus */
+        .toolbar-btn::after {
+            content: attr(aria-label);
+            position: absolute;
+            bottom: 120%; /* A gomb felett */
+            left: 50%;
+            transform: translateX(-50%);
+            
+            background-color: var(--color-primary);
+            color: var(--color-surface-01);
+            padding: calc(var(--spacing) * 1) calc(var(--spacing) * 2);
+            border-radius: var(--radius-lg);
+            font-size: 0.75rem;
+            font-weight: 500;
+            white-space: nowrap;
+            
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease-in-out, bottom 0.2s ease-in-out;
+        }
+
+        .toolbar-btn:hover::after {
+            opacity: 1;
+            bottom: 130%; /* Kicsit feljebb csúszik */
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- REFAKTORÁLT TOOLBAR KOMPONENS -->
+    <div class="toolbar">
+        <div class="toolbar-group">
+            <button class="toolbar-btn active" data-action="select" aria-label="Select">
+                <svg viewBox="0 0 20 20"><path d="M1.933 4.477C1.388 2.9 2.9 1.388 4.477 1.933l12.361 4.272c1.742.602 1.812 3.04.107 3.74l-4.768 1.959a.5.5 0 0 0-.272.272l-1.959 4.768c-.7 1.705-3.138 1.635-3.74-.107L1.933 4.477zm2.054-1.126a.5.5 0 0 0-.636.636l4.272 12.361a.5.5 0 0 0 .935.027l1.959-4.768a2 2 0 0 1 1.09-1.09l4.768-1.959a.5.5 0 0 0-.027-.935L3.987 3.351z"></path></svg>
+            </button>
+            <button class="toolbar-btn" data-action="move" aria-label="Move">
+                <svg viewBox="0 0 20 20"><path d="M5.248 2.727c1.188-.713 2.709-.289 3.387.932l1.34 2.414 3.053-1.832c1.543-.927 3.504-.427 4.461 1.093l.099.167.785 1.414c1.895 3.412.771 7.774-2.523 9.751-2.226 1.337-4.986 1.28-7.16-.145L4.038 13.47a.75.75 0 0 1-.331-.736l.155-1.06c.178-1.216 1.173-2.106 2.333-2.156l.01-.001-1.857-3.344a2.58 2.58 0 0 1 .756-3.354l.142-.092zm2.076 1.661c-.27-.486-.849-.647-1.304-.375-.472.283-.638.929-.359 1.432l2.576 4.639a.75.75 0 0 1-.773 1.105l-1.02-.161c-.519-.082-1.014.296-1.097.864l-.087.586 4.253 2.79c1.622 1.064 3.655 1.148 5.347.238l.219-.124c2.595-1.558 3.489-5.026 1.984-7.737l-.785-1.414c-.507-.913-1.611-1.221-2.477-.701l-3.718 2.232a.75.75 0 0 1-1.042-.279L7.324 4.387zM1.187 6.084a.75.75 0 1 1 1.4.538c-.503 1.309-.503 2.45 0 3.759a.75.75 0 1 1-1.4.538 6.36 6.36 0 0 1 0-4.835z"></path></svg>
+            </button>
+            <button class="toolbar-btn" data-action="comment" aria-label="Comment">
+                <svg viewBox="0 0 20 20"><path d="M14.38 1.75A3.25 3.25 0 0 1 17.63 5v7.917a3.25 3.25 0 0 1-3.25 3.25H6.702c-.016 0-.031.004-.044.013l-3.131 1.957A.75.75 0 0 1 2.38 17.5V5a3.25 3.25 0 0 1 3.25-3.25h8.75zm0 1.5H5.63A1.75 1.75 0 0 0 3.88 5v11.147l1.983-1.24c.201-.126.428-.204.662-.231l.177-.01h7.678a1.75 1.75 0 0 0 1.75-1.75V5a1.75 1.75 0 0 0-1.75-1.75z"></path></svg>
+            </button>
+            <button class="toolbar-btn" data-action="frame" aria-label="Frame">
+                <svg viewBox="0 0 20 20"><path d="M4.79 1.54a.75.75 0 0 1 .75.75v1.75h7.167a3.25 3.25 0 0 1 3.245 3.066l.005.184-.001 7.166 1.751.001a.75.75 0 0 1 .743.648l.007.102a.75.75 0 0 1-.75.75l-1.751-.001.001 1.751a.75.75 0 0 1-.648.743l-.102.007a.75.75 0 0 1-.75-.75l-.001-1.751-7.166.001a3.25 3.25 0 0 1-3.245-3.066l-.005-.184V5.54H2.29a.75.75 0 0 1-.743-.648L1.54 4.79a.75.75 0 0 1 .75-.75h1.75V2.29a.75.75 0 0 1 .648-.743l.102-.007zm.75 4v7.167a1.75 1.75 0 0 0 1.75 1.75l7.166-.001.001-7.166a1.75 1.75 0 0 0-1.606-1.744l-.144-.006H5.54z"></path></svg>
+            </button>
+            <button class="toolbar-btn" data-action="play" aria-label="Play Animation">
+                <svg viewBox="0 0 20 20"><path d="M3.5 5.756c0-2.979 3.306-4.768 5.8-3.14l6.512 4.251c2.267 1.48 2.267 4.801 0 6.28L9.3 17.398c-2.494 1.628-5.8-.161-5.8-3.14V5.756zm4.98-1.884C6.983 2.895 5 3.969 5 5.756v8.501c0 1.787 1.983 2.861 3.48 1.884l6.512-4.251a2.25 2.25 0 0 0 0-3.768L8.48 3.872z"></path></svg>
+            </button>
+            
+            <button class="zoom-selector-btn" id="zoom-selector" aria-label="Zoom Level">
+                <span id="zoom-level">100%</span>
+                <svg viewBox="0 0 20 20"><path d="M11.371 12.38c-.757.827-1.985.827-2.742 0l-3.36-3.668a1.07 1.07 0 0 1 0-1.418c.359-.392.94-.392 1.299 0l3.36 3.668c.04.044.104.044.144 0l3.36-3.668c.359-.392.94-.392 1.299 0a1.07 1.07 0 0 1 0 1.418l-3.36 3.668z"></path></svg>
+            </button>
+
+            <button class="toolbar-btn disabled" data-action="undo" aria-label="Undo (Ctrl+Z)">
+                <svg style="transform: rotate(180deg);" viewBox="0 0 20 20"><path d="M12.183 4.3a.75.75 0 0 1 1.061 0l3.44 3.441a3.25 3.25 0 0 1 0 4.596l-3.44 3.441a.75.75 0 0 1-1.061-1.061l3.441-3.441a1.75 1.75 0 0 0 .298-.397l.043-.091H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h12.836l-.044-.09c-.052-.095-.114-.186-.184-.272l-.114-.125-3.44-3.441a.75.75 0 0 1 0-1.061z"></path></svg>
+            </button>
+            <button class="toolbar-btn" data-action="redo" aria-label="Redo (Ctrl+Y)">
+                <svg viewBox="0 0 20 20"><path d="M12.183 4.3a.75.75 0 0 1 1.061 0l3.44 3.441a3.25 3.25 0 0 1 0 4.596l-3.44 3.441a.75.75 0 0 1-1.061-1.061l3.441-3.441a1.75 1.75 0 0 0 .298-.397l.043-.091H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h12.836l-.044-.09c-.052-.095-.114-.186-.184-.272l-.114-.125-3.44-3.441a.75.75 0 0 1 0-1.061z"></path></svg>
+            </button>
+        </div>
+
+        <div class="toolbar-group">
+            <button class="primary-btn" data-action="export">Export</button>
+        </div>
+    </div>
+"
+-------------------------------------------------------
+[Tabswitcher]
+" <style>
+        /* --- DESIGN RENDSZER: CSS VÁLTOZÓK --- */
+        /* A második kódrészletből kinyert értékek alapján */
+        :root {
+            /* Színpaletta */
+            --shade-01: #fcfcfc;
+            --shade-02: #f8f7f7;
+            --shade-03: #f1f1f1;
+            --shade-04: #ececec;
+            --shade-05: #e2e2e2;
+            --shade-06: #7b7b7b;
+            --shade-09: #121212;
+
+            /* Felületek és Szövegek */
+            --color-surface-01: var(--shade-01); /* Aktív elem háttere */
+            --color-surface-02: var(--shade-02); /* Oldal háttere */
+            --color-surface-03: var(--shade-03); /* Komponens alap háttere */
+            --color-primary: var(--shade-09);    /* Aktív szöveg színe */
+            --color-secondary: var(--shade-06);  /* Inaktív szöveg színe */
+            
+            /* Szegélyek */
+            --color-s-01: var(--shade-04);
+            --color-s-02: var(--shade-05);
+            
+            /* Térközök és Méretek */
+            --spacing: 0.25rem; /* 4px */
+            
+            /* Lekerekítés */
+            --radius-lg: 0.5rem;
+            --radius-xl: 0.75rem;
+
+            /* Betűtípus */
+            --font-family: 'Inter', sans-serif;
+        }
+
+        /* --- ALAP STÍLUSOK AZ OLDALRA --- */
+        html {
+            box-sizing: border-box;
+        }
+        *, *::before, *::after {
+            box-sizing: inherit;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--color-surface-02);
+            color: var(--color-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+
+            /* A komponens középre igazítása a bemutatáshoz */
+            display: grid;
+            place-items: center;
+            min-height: 100vh;
+        }
+        
+        /* --- TAB-VÁLTÓ KOMPONENS STÍLUSAI --- */
+        .tab-container {
+            padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
+            border-bottom: 1px solid var(--color-s-01);
+            width: 100%;
+            max-width: 320px; /* Demo méret */
+        }
+        
+        .tab-switcher {
+            padding: calc(var(--spacing) * 0.75);
+            border: 1px solid var(--color-s-02);
+            background: var(--color-surface-03);
+            border-radius: var(--radius-xl);
+            box-shadow: inset 0px 1px 2px 0 rgba(50, 50, 50, 0.10);
+            position: relative; /* Az indikátor pozicionálásához */
+        }
+        
+        .tab-buttons {
+            display: flex;
+            position: relative; /* A gombok z-index-ének érvényesüléséhez */
+        }
+        
+        .tab-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50%; /* Két gomb esetén 50% */
+            height: 100%;
+            background: var(--color-surface-01);
+            border-radius: var(--radius-lg);
+            
+            /* A második kódból származó, szebb árnyék */
+            box-shadow: 0 1.25px 3px 0px rgba(50,50,50,0.10), 
+                        inset 0px 1.25px 1px 0px #FFF;
+            
+            /* Finom, hardvergyorsított animáció */
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .tab-btn {
+            flex: 1; /* A gombok egyenlően osztoznak a helyen */
+            height: calc(var(--spacing) * 8); /* 32px */
+            
+            /* Reset */
+            border: none;
+            background: transparent;
+            
+            /* Tipográfia */
+            font-family: inherit;
+            font-size: 0.875rem; /* 14px, kicsit olvashatóbb */
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: var(--color-secondary);
+            
+            /* Interaktivitás */
+            cursor: pointer;
+            position: relative;
+            z-index: 1; /* A gombok az indikátor felett vannak */
+            transition: color 0.25s ease-out;
+        }
+        
+        .tab-btn:hover {
+            color: var(--color-primary); /* Hover effektus minden gombra */
+        }
+
+        .tab-btn.active {
+            color: var(--color-primary);
+            transition-delay: 0.05s; /* Késleltetjük az aktív színváltást, hogy szebb legyen az animáció */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="tab-container">
+      <div class="tab-switcher">
+        <!-- Az animált "csúszka" -->
+        <div class="tab-indicator" id="tabIndicator"></div>
+        
+        <div class="tab-buttons">
+          <!-- Az első gomb alapértelmezetten aktív -->
+          <button class="tab-btn active" onclick="switchTab(0, this)">Scene</button>
+          <button class="tab-btn" onclick="switchTab(1, this)">Assets</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+        function switchTab(index, clickedButton) {
+            const indicator = document.getElementById('tabIndicator');
+            const buttons = document.querySelectorAll('.tab-btn');
+
+            // 1. Az indikátor mozgatása
+            // A 'transform' használata sokkal performánsabb, mint a 'left' tulajdonság animálása.
+            // 100% * index -> 0-s gombnál 0%, 1-es gombnál 100% eltolás.
+            indicator.style.transform = `translateX(${100 * index}%)`;
+
+            // 2. Az 'active' osztály frissítése
+            // Először minden gombról levesszük az osztályt.
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // Majd csak a kattintott gombra tesszük rá.
+            clickedButton.classList.add('active');
+        }
+    </script>
+"
+-------------------------------------------------
+[Chat-Container]
+" <style>
+        /* A fő alkalmazásból átemelt design system változók */
+        :root {
+            --shade-01: #fcfcfc;
+            --shade-02: #f8f7f7;
+            --shade-03: #f1f1f1;
+            --shade-04: #ececec;
+            --shade-05: #e2e2e2;
+            --shade-06: #7b7b7b;
+            --shade-07: #323232;
+            --shade-08: #222;
+            --shade-09: #121212;
+            --color-primary: var(--shade-09);
+            --color-secondary: var(--shade-06);
+            --color-surface-01: var(--shade-01);
+            --color-surface-03: var(--shade-03);
+            --color-s-01: var(--shade-04);
+            --color-s-02: var(--shade-05);
+            --color-green: #55b93e;
+            --color-blue: #3582ff;
+            --spacing: .25rem;
+            --radius-xl: .75rem;
+            --radius-3xl: 1.5rem;
+            --font-sans: ui-sans-serif, system-ui, sans-serif;
+            --box-shadow-prompt-input: inset 0 2px 0 0 #fff, 0px 18px 24px -20px rgba(0,0,0,0.13), 0px 8px 16px -12px rgba(0,0,0,0.07);
+            --box-shadow-depth-01: 0 6px 3px 0 rgba(0,0,0,0.01), 0 3px 3px 0 rgba(0,0,0,0.02), 0 1px 1px 0 rgba(0,0,0,0.02);
+        }
+
+        /* Demo háttér és alap stílusok */
+        body {
+            background-color: #f0f2f5;
+            font-family: var(--font-sans);
+            height: 200vh;
+        }
+
+        *, ::before, ::after {
+            box-sizing: border-box;
+            border-width: 0;
+            border-style: solid;
+            margin: 0;
+            padding: 0;
+        }
+        
+        *:focus-visible {
+            outline: 2px solid var(--color-blue);
+            outline-offset: 2px;
+        }
+
+        /* --- VÉGLEGES CHAT-CONTAINER CSS --- */
+
+        .chat-container {
+            /* Pozicionálás és méret */
+            position: fixed;
+            left: 50%;
+            bottom: calc(var(--spacing) * 3);
+            z-index: 10;
+            width: calc(var(--spacing) * 135.5);
+            transform: translateX(-50%);
+
+            /* Kinézet */
+            background-color: var(--color-surface-01);
+            border: 1px solid var(--color-s-01);
+            border-radius: var(--radius-3xl);
+            box-shadow: var(--box-shadow-prompt-input);
+            
+            /* Elrendezés */
+            padding-top: calc(var(--spacing) * 5);
+            padding-left: calc(var(--spacing) * 3);
+            padding-right: calc(var(--spacing) * 3);
+            padding-bottom: calc(var(--spacing) * 3);
+        }
+
+        .chat-history-controls {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: calc(var(--spacing) * 4);
+            
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 3);
+            height: calc(var(--spacing) * 11);
+            padding: 0 calc(var(--spacing) * 5);
+
+            background-color: var(--color-surface-01);
+            border: 1px solid var(--color-s-01);
+            border-radius: 9999px;
+            box-shadow: var(--box-shadow-depth-01);
+        }
+        
+        .chat-history-controls button {
+            display: inline-flex;
+            background: none;
+            cursor: pointer;
+        }
+        
+        .chat-history-controls button svg {
+            width: calc(var(--spacing) * 4);
+            height: calc(var(--spacing) * 4);
+            fill: var(--color-secondary);
+            transition: fill 0.2s;
+        }
+
+        .chat-history-controls button:hover svg {
+            fill: var(--color-primary);
+        }
+
+        .chat-history-indicator {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 2);
+        }
+
+        .chat-history-dot {
+            display: block;
+            width: calc(var(--spacing) * 0.375);
+            background-color: rgba(18,18,18, 0.3);
+            border-radius: 9999px;
+        }
+
+        .chat-history-dot.short { height: calc(var(--spacing) * 2); }
+        .chat-history-dot.tall { height: calc(var(--spacing) * 3.5); }
+        .chat-history-dot.active { background-color: var(--color-primary); }
+
+        .chat-input-area {
+            display: block;
+            width: 100%;
+            background-color: transparent;
+            min-height: calc(var(--spacing) * 6);
+            margin-bottom: calc(var(--spacing) * 8);
+            padding-left: calc(var(--spacing) * 2);
+            border: none;
+            outline: none;
+            resize: none;
+            
+            /* PONTOSÍTVA: A utility class-okból származtatott értékek */
+            font-family: var(--font-sans);
+            font-size: 0.9375rem; /* ~text-title */
+            line-height: 1.5rem;  /* ~text-title */
+            font-weight: 400;
+            color: var(--color-primary);
+            letter-spacing: -0.02em;
+            
+            transition: opacity 0.3s;
+        }
+
+        .chat-input-area::placeholder {
+            color: var(--color-secondary);
+        }
+
+        .chat-input-area:disabled {
+            opacity: 0.5;
+            cursor: wait;
+        }
+
+        .chat-footer {
+            display: flex;
+            gap: calc(var(--spacing) * 2);
+            align-items: center;
+        }
+
+        .chat-btn {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: calc(var(--spacing) * 10);
+            height: calc(var(--spacing) * 10);
+            background-color: transparent;
+            border: 1px solid var(--color-s-02);
+            border-radius: var(--radius-xl);
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .chat-btn:hover {
+            background-color: var(--color-surface-03);
+        }
+
+        .chat-btn svg {
+            width: calc(var(--spacing) * 5);
+            height: calc(var(--spacing) * 5);
+            fill: var(--color-primary);
+        }
+
+        .mode-selector {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 3);
+            flex-grow: 1;
+            height: calc(var(--spacing) * 10);
+            padding: 0 calc(var(--spacing) * 3);
+            
+            background-color: transparent;
+            border: 1px solid var(--color-s-02);
+            border-radius: var(--radius-xl);
+            
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .mode-selector:hover {
+            border-color: var(--color-secondary);
+            background-color: var(--color-surface-03);
+        }
+
+        .mode-selector .icon-text { flex-grow: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .mode-selector .icon-mode { width: calc(var(--spacing) * 4); height: calc(var(--spacing) * 4); fill: var(--color-green); flex-shrink: 0; }
+        .mode-selector .icon-chevron { width: calc(var(--spacing) * 5); height: calc(var(--spacing) * 5); fill: var(--color-secondary); flex-shrink: 0; }
+
+        .submit-btn {
+            position: relative;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            width: calc(var(--spacing) * 10);
+            height: calc(var(--spacing) * 10);
+            padding: 0;
+            
+            border: none;
+            border-radius: var(--radius-xl);
+            cursor: pointer;
+            
+            color: var(--shade-01);
+            fill: var(--shade-01);
+            
+            box-shadow: 0 0.5px 1px 0px rgba(255,255,255,0.15) inset,
+                        0px 2px 4px -1px rgba(13,13,13,0.50),
+                        0px -1px 1.2px 0.35px var(--shade-09) inset,
+                        0px 0px 0px 1px #333;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            border-radius: inherit;
+            background: linear-gradient(to bottom, var(--shade-07), var(--shade-08));
+            transition: opacity 0.2s;
+        }
+        
+        .submit-btn:hover::before {
+            opacity: 0.9;
+        }
+
+        .submit-btn svg {
+            position: relative;
+            z-index: 2;
+            width: calc(var(--spacing) * 5);
+            height: calc(var(--spacing) * 5);
+            transform: rotate(-90deg);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="chat-history-controls">
+            <button aria-label="Previous history item">
+                <svg viewBox="0 0 20 20" style="transform: rotate(180deg);"><path d="M12.183 4.3a.75.75 0 0 1 1.061 0l3.44 3.441a3.25 3.25 0 0 1 0 4.596l-3.44 3.441a.75.75 0 0 1-1.061-1.061l3.441-3.441a1.75 1.75 0 0 0 .298-.397l.043-.091H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h12.836l-.044-.09c-.052-.095-.114-.186-.184-.272l-.114-.125-3.44-3.441a.75.75 0 0 1 0-1.061z"></path></svg>
+            </button>
+            <div class="chat-history-indicator">
+                <span class="chat-history-dot short"></span>
+                <span class="chat-history-dot tall active"></span>
+                <span class="chat-history-dot short"></span>
+                <span class="chat-history-dot short"></span>
+                <span class="chat-history-dot short"></span>
+                <span class="chat-history-dot tall active"></span>
+                <span class="chat-history-dot short"></span>
+            </div>
+            <button aria-label="Next history item">
+                <svg viewBox="0 0 20 20"><path d="M12.183 4.3a.75.75 0 0 1 1.061 0l3.44 3.441a3.25 3.25 0 0 1 0 4.596l-3.44 3.441a.75.75 0 0 1-1.061-1.061l3.441-3.441a1.75 1.75 0 0 0 .298-.397l.043-.091H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h12.836l-.044-.09c-.052-.095-.114-.186-.184-.272l-.114-.125-3.44-3.441a.75.75 0 0 1 0-1.061z"></path></svg>
+            </button>
+        </div>
+        
+        <textarea class="chat-input-area" id="chat-textarea" placeholder="Describe your 3D object or scene..." rows="1"></textarea>
+        
+        <div class="chat-footer">
+            <button class="chat-btn" aria-label="Attach file">
+                <svg viewBox="0 0 20 20"><path d="M10.005 2.38a.75.75 0 0 1 .75.75v6.125h6.125a.75.75 0 0 1 .743.648l.007.102a.75.75 0 0 1-.75.75h-6.125v6.125a.75.75 0 0 1-.648.743l-.102.007a.75.75 0 0 1-.75-.75v-6.125H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h6.125V3.13a.75.75 0 0 1 .648-.743l.102-.007z"></path></svg>
+            </button>
+            <button class="mode-selector">
+                <svg class="icon-mode" viewBox="0 0 20 20"><path d="M9.149 1.683c.852-1.272 2.787-.651 2.787.894v3.749l4.033.001c1.18 0 1.896 1.307 1.338 2.335l-.08.132-6.376 9.522c-.852 1.272-2.787.651-2.787-.894l-.001-3.751-4.032.001c-1.18 0-1.896-1.307-1.338-2.336l.08-.132 6.376-9.522z"></path></svg>
+                <span class="icon-text">Inspiration</span>
+                <svg class="icon-chevron" viewBox="0 0 20 20"><path d="M11.371 12.38c-.757.827-1.985.827-2.742 0l-3.36-3.668a1.07 1.07 0 0 1 0-1.418c.359-.392.94-.392 1.299 0l3.36 3.668c.04.044.104.044.144 0l3.36-3.668c.359-.392.94-.392 1.299 0a1.07 1.07 0 0 1 0 1.418l-3.36 3.668z"></path></svg>
+            </button>
+            <button class="submit-btn" id="submit-prompt-btn" aria-label="Submit prompt">
+                <svg viewBox="0 0 20 20"><path d="M12.183 4.3a.75.75 0 0 1 1.061 0l3.44 3.441a3.25 3.25 0 0 1 0 4.596l-3.44 3.441a.75.75 0 0 1-1.061-1.061l3.441-3.441a1.75 1.75 0 0 0 .298-.397l.043-.091H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h12.836l-.044-.09c-.052-.095-.114-.186-.184-.272l-.114-.125-3.44-3.441a.75.75 0 0 1 0-1.061z"></path></svg>
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // TEXTAREA AUTO-RESIZE SCRIPT
+        document.addEventListener('DOMContentLoaded', () => {
+            const textarea = document.getElementById('chat-textarea');
+            if (textarea) {
+                const initialHeight = textarea.clientHeight;
+
+                function autoResize() {
+                    textarea.style.height = 'auto'; 
+                    textarea.style.height = Math.max(initialHeight, textarea.scrollHeight) + 'px';
+                }
+
+                textarea.addEventListener('input', autoResize);
+                autoResize();
+            }
+        });
+    </script>
+"
