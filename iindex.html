@@ -1,0 +1,1470 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptCraft - Prototyping Tool</title>
+    <style>
+          .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            align-items: center;
+        }
+        
+        .masterclass-button {
+            position: relative;
+            width: 236px;
+            height: 40px;
+            background: linear-gradient(to bottom, #E5E5E5 0%, #D9D9D9 100%);
+            border: 1px solid #D4D4D4;
+            border-radius: var(--radius-xl);
+            padding: 0 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 3px 4px -1px rgba(0, 0, 0, 0.15),
+                0 1px 0 0 rgba(255, 255, 255, 0.33) inset;
+            overflow: hidden;
+            outline: none;
+            user-select: none;
+        }
+        
+        .masterclass-button::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(60% 50% at 50% 100%, rgba(255, 255, 255, 0.4) 0%, transparent 100%);
+            border-radius: var(--radius-xl);
+            filter: blur(15px);
+            opacity: 0;
+            transition: opacity 1.2s ease-in-out;
+            pointer-events: none;
+        }
+        
+        .masterclass-button::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: var(--radius-xl);
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            pointer-events: none;
+        }
+        
+        .masterclass-button:hover::before {
+            opacity: 1;
+        }
+        
+        .masterclass-button:hover::after {
+            opacity: 1;
+        }
+        
+        .masterclass-button:active {
+            transform: scale(0.98);
+            box-shadow: 
+                0 1px 2px -1px rgba(0, 0, 0, 0.15),
+                0 1px 0 0 rgba(255, 255, 255, 0.33) inset;
+        }
+        
+        .button-icon {
+            width: 24px;
+            height: 24px;
+            background: rgba(0, 0, 0, 0.08);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 2;
+            transition: background 0.2s;
+        }
+        
+        .masterclass-button:hover .button-icon {
+            background: rgba(0, 0, 0, 0.12);
+        }
+        
+        .button-icon svg {
+            width: 16px;
+            height: 16px;
+            fill: #333;
+        }
+        
+        .button-text {
+            font-size: 15px;
+            font-weight: 500;
+            color: #1a1a1a;
+            letter-spacing: 0.02em;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+            white-space: nowrap;
+        }
+        
+        .demo-label {
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+        }
+        /* Design System Variables - Kiegészített verzió */
+        :root {
+            /* Árnyalatok */
+            --shade-01: #fcfcfc;
+            --shade-01_95: #fcfcfcf2;
+            --shade-02: #f8f7f7;
+            --shade-03: #f1f1f1;
+            --shade-04: #ececec;
+            --shade-05: #e2e2e2;
+            --shade-06: #7b7b7b;
+            --shade-06_30: #7b7b7b4d;
+            --shade-06_50: #7b7b7b80;
+            --shade-07: #323232;
+            --shade-07_05: #3232320d;
+            --shade-07_10: #3232321a;
+            --shade-08: #222;
+            --shade-08_05: #2222220d;
+            --shade-08_10: #2222221a;
+            --shade-09: #121212;
+            --shade-09_05: #1212120d;
+            --shade-09_10: #1212121a;
+            --shade-09_35: #12121259;
+            
+            /* Szemantikus színek */
+            --color-primary: var(--shade-09);
+            --color-secondary: var(--shade-06);
+            --color-tertiary: #a8a8a8;
+            --color-surface-01: var(--shade-01);
+            --color-surface-02: var(--shade-02);
+            --color-surface-03: var(--shade-03);
+            --color-s-01: var(--shade-04);
+            --color-s-02: var(--shade-05);
+            --color-green: #55b93e;
+            --color-orange: #e36323;
+            --color-red: #fe5938;
+            --color-blue: #3582ff;
+            --color-black: #000;
+            --color-white: #fff;
+            
+            /* Tipográfia */
+            --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 600;
+            --font-weight-bold: 700;
+            
+            /* Méretezés */
+            --spacing: 0.25rem;
+            
+            /* Lekerekítés */
+            --radius-md: 0.375rem;
+            --radius-lg: 0.5rem;
+            --radius-xl: 0.75rem;
+            --radius-2xl: 1rem;
+            --radius-3xl: 1.5rem;
+            --radius-4xl: 2rem;
+            
+            /* Árnyékok - CSS fájlból */
+            --box-shadow-toolbar: 0px 1px 4px -4px rgba(0,0,0,0.07), 0px 8px 16px -12px rgba(0,0,0,0.13);
+            --box-shadow-prompt-input: inset 0 2px 0 0 #fff, 0px 18px 24px -20px rgba(0,0,0,0.13), 0px 8px 16px -12px rgba(0,0,0,0.07);
+            --box-shadow-depth-01: 0 6px 3px 0 rgba(0,0,0,0.01), 0 3px 3px 0 rgba(0,0,0,0.02), 0 1px 1px 0 rgba(0,0,0,0.02);
+            --box-shadow-popover: 0 153px 61px 0 rgba(0,0,0,0.01), 0 86px 52px 0 rgba(0,0,0,0.04), 0 38px 38px 0 rgba(0,0,0,0.06), 0 10px 21px 0 rgba(0,0,0,0.07);
+            
+            /* Animációk */
+            --ease-out: cubic-bezier(0, 0, 0.2, 1);
+            --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            --default-transition-duration: 0.2s;
+            --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--color-surface-02);
+            color: var(--color-primary);
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        /* Main Container */
+        .container {
+            display: flex;
+            height: 100vh;
+            padding: calc(var(--spacing) * 3);
+            gap: calc(var(--spacing) * 3);
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            width: calc(var(--spacing) * 65);
+            background: var(--color-surface-01);
+            border-radius: var(--radius-3xl);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar-header {
+            padding: calc(var(--spacing) * 4) calc(var(--spacing) * 4) calc(var(--spacing) * 3);
+            border-bottom: 1px solid var(--color-s-01);
+        }
+        
+        .logo-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: calc(var(--spacing) * 3);
+        }
+        
+        .logo {
+            width: calc(var(--spacing) * 8);
+            height: calc(var(--spacing) * 8);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: calc(var(--spacing) * 2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        
+        .btn-icon {
+            width: calc(var(--spacing) * 8);
+            height: calc(var(--spacing) * 8);
+            border: none;
+            background: transparent;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        
+        .btn-icon:hover {
+            background: var(--color-surface-03);
+        }
+        
+        .project-selector {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 2.5);
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0;
+            border: none;
+            background: transparent;
+            letter-spacing: -0.02em;
+        }
+        
+        .chevron {
+            width: calc(var(--spacing) * 6);
+            height: calc(var(--spacing) * 6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: calc(var(--spacing) * 1.5);
+            transition: all 0.2s;
+        }
+        
+        .project-selector:hover .chevron {
+            background: rgba(123, 123, 123, 0.05);
+        }
+        
+        /* --- START: BEILLESZTETT TAB-SWITCHER STÍLUSOK --- */
+        .tab-container {
+            padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
+            border-bottom: 1px solid var(--color-s-01);
+        }
+        
+        .tab-switcher {
+            padding: calc(var(--spacing) * 0.75);
+            border: 1px solid var(--color-s-02);
+            background: var(--color-surface-03);
+            border-radius: var(--radius-xl);
+            box-shadow: inset 0px 1px 2px 0 rgba(50, 50, 50, 0.10);
+            position: relative;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            position: relative;
+        }
+        
+        .tab-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50%;
+            height: 100%;
+            background: var(--color-surface-01);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 1.25px 3px 0px rgba(50,50,50,0.10), 
+                        inset 0px 1.25px 1px 0px #FFF;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .tab-btn {
+            flex: 1;
+            height: calc(var(--spacing) * 8);
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: var(--color-secondary);
+            cursor: pointer;
+            position: relative;
+            z-index: 1;
+            transition: color 0.25s ease-out;
+        }
+        
+        .tab-btn:hover {
+            color: var(--color-primary);
+        }
+
+        .tab-btn.active {
+            color: var(--color-primary);
+            transition-delay: 0.05s;
+        }
+        /* --- END: BEILLESZTETT TAB-SWITCHER STÍLUSOK --- */
+        
+        /* Content Area */
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: calc(var(--spacing) * 3);
+        }
+        
+        .sidebar-content::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .item-card {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 3);
+            width: 100%;
+            padding: calc(var(--spacing) * 0.75);
+            border: 1px solid transparent;
+            border-radius: var(--radius-xl);
+            margin-bottom: calc(var(--spacing) * 1);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .item-card:hover {
+            background: var(--color-surface-03);
+        }
+        
+        .item-icon {
+            width: calc(var(--spacing) * 8);
+            height: calc(var(--spacing) * 8);
+            background: var(--color-surface-03);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+        
+        .item-card:hover .item-icon {
+            background: var(--color-surface-01);
+        }
+        
+        .item-text {
+            flex: 1;
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Action Buttons */
+        .item-actions {
+            position: absolute;
+            right: calc(var(--spacing) * 3);
+            display: flex;
+            gap: calc(var(--spacing) * 3);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .item-card:hover .item-actions {
+            opacity: 1;
+        }
+        
+        /* Search Bar */
+        .sidebar-footer {
+            padding: calc(var(--spacing) * 3);
+            border-top: 1px solid var(--color-s-01);
+        }
+        
+        .search-container {
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            height: calc(var(--spacing) * 10);
+            padding-left: calc(var(--spacing) * 12);
+            padding-right: calc(var(--spacing) * 14);
+            border: none;
+            background: transparent;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--color-primary);
+            outline: none;
+        }
+        
+        .search-icon {
+            position: absolute;
+            top: calc(var(--spacing) * 1);
+            left: calc(var(--spacing) * 1);
+            bottom: calc(var(--spacing) * 1);
+            width: calc(var(--spacing) * 8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+        
+        .keyboard-shortcut {
+            position: absolute;
+            top: 50%;
+            right: calc(var(--spacing) * 2.5);
+            transform: translateY(-50%);
+            font-size: 0.75rem;
+            color: var(--color-secondary);
+            padding: calc(var(--spacing) * 0.5) calc(var(--spacing) * 1.5);
+            background: var(--color-surface-03);
+            border-radius: calc(var(--spacing) * 1);
+        }
+        
+        /* --- START: BEILLESZTETT TOOLBAR STÍLUSOK --- */
+        .toolbar {
+            position: fixed;
+            top: calc(var(--spacing) * 3);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: flex;
+            background: var(--color-surface-01);
+            border: 1px solid var(--color-s-01);
+            border-radius: calc(var(--spacing) * 5); /* 1.25rem */
+            box-shadow: var(--box-shadow-toolbar);
+            padding: calc(var(--spacing) * 2);
+            gap: calc(var(--spacing) * 2);
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 2);
+        }
+
+        .toolbar-btn, .zoom-selector-btn {
+            position: relative; /* Tooltip pozicionáláshoz */
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: calc(var(--spacing) * 10);  /* 2.5rem */
+            height: calc(var(--spacing) * 10); /* 2.5rem */
+            border: 1px solid transparent;
+            background-color: transparent;
+            border-radius: var(--radius-xl);
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .toolbar-btn:hover, .zoom-selector-btn:hover {
+            background-color: var(--color-surface-03);
+        }
+
+        .toolbar-btn.active {
+            background-color: var(--color-surface-03);
+            border-color: var(--color-s-02);
+            box-shadow: 0 -1px 3px 0px rgba(18,18,18,0.15) inset, 0px 1.25px 1px 0px #FFF inset;
+        }
+
+        .toolbar-btn.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background-color: transparent; /* Felülírja a hovert */
+        }
+
+        .toolbar-btn svg, .zoom-selector-btn svg {
+            width: calc(var(--spacing) * 5); /* 1.25rem */
+            height: calc(var(--spacing) * 5);
+            fill: var(--color-primary);
+        }
+        
+        .zoom-selector-btn {
+            min-width: calc(var(--spacing) * 22);
+            padding: 0 calc(var(--spacing) * 3);
+            justify-content: space-between;
+            background-color: var(--color-surface-03);
+            border-color: var(--color-s-01);
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--color-primary);
+        }
+
+        .zoom-selector-btn svg {
+            width: calc(var(--spacing) * 4);
+            height: calc(var(--spacing) * 4);
+            fill: var(--color-secondary);
+        }
+        
+        .zoom-selector-btn:hover {
+            border-color: rgba(18, 18, 18, 0.1);
+        }
+        
+        /* Tooltip stílus */
+        .toolbar-btn::after {
+            content: attr(aria-label);
+            position: absolute;
+            bottom: 120%; /* A gomb felett */
+            left: 50%;
+            transform: translateX(-50%);
+            
+            background-color: var(--color-primary);
+            color: var(--color-surface-01);
+            padding: calc(var(--spacing) * 1) calc(var(--spacing) * 2);
+            border-radius: var(--radius-lg);
+            font-size: 0.75rem;
+            font-weight: 500;
+            white-space: nowrap;
+            
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease-in-out, bottom 0.2s ease-in-out;
+        }
+
+        .toolbar-btn:hover::after {
+            opacity: 1;
+            bottom: 130%; /* Kicsit feljebb csúszik */
+        }
+        /* --- END: BEILLESZTETT TOOLBAR STÍLUSOK --- */
+
+        .primary-btn {
+            height: calc(var(--spacing) * 10);
+            padding: 0 calc(var(--spacing) * 6);
+            border: none;
+            border-radius: var(--radius-xl);
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to bottom, #E5E5E5, #E2E2E2);
+            box-shadow: 0 3px 4px -1px rgba(0,0,0,0.15), 0px 1px 0px 0px rgba(255,255,255,0.33) inset, 0px 0px 0px 1px #D4D4D4;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .primary-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: var(--radius-xl);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .primary-btn:hover::after {
+            opacity: 1;
+        }
+        
+        /* Canvas Area */
+        .canvas-area {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .canvas {
+            width: 80%;
+            height: 80%;
+            background: white;
+            border-radius: var(--radius-2xl);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--color-secondary);
+            position: relative;
+        }
+        
+        /* Canvas Controls */
+        .canvas-controls {
+            position: absolute;
+            left: calc(var(--spacing) * -14);
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--color-surface-01);
+            border: 1px solid var(--color-s-01);
+            border-radius: calc(var(--spacing) * 11);
+            padding: calc(var(--spacing) * 5) 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: calc(var(--spacing) * 3);
+            box-shadow: 0 6px 3px 0 rgba(0,0,0,0.01);
+        }
+        
+        .layer-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: calc(var(--spacing) * 2);
+        }
+        
+        .layer-dot {
+            width: calc(var(--spacing) * 2);
+            height: calc(var(--spacing) * 0.375);
+            background: rgba(18, 18, 18, 0.3);
+            border-radius: calc(var(--spacing) * 1);
+        }
+        
+        .layer-dot.active {
+            width: calc(var(--spacing) * 3.5);
+            background: var(--color-primary);
+        }
+        
+        /* --- START: BEILLESZTETT CHAT-CONTAINER STÍLUSOK --- */
+        .chat-container {
+            position: fixed;
+            left: 50%;
+            bottom: calc(var(--spacing) * 3);
+            z-index: 10;
+            width: calc(var(--spacing) * 135.5);
+            transform: translateX(-50%);
+            background-color: var(--color-surface-01);
+            border: 1px solid var(--color-s-01);
+            border-radius: var(--radius-3xl);
+            box-shadow: var(--box-shadow-prompt-input);
+            padding-top: calc(var(--spacing) * 5);
+            padding-left: calc(var(--spacing) * 3);
+            padding-right: calc(var(--spacing) * 3);
+            padding-bottom: calc(var(--spacing) * 3);
+        }
+
+        .chat-history-controls {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: calc(var(--spacing) * 4);
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 3);
+            height: calc(var(--spacing) * 11);
+            padding: 0 calc(var(--spacing) * 5);
+            background-color: var(--color-surface-01);
+            border: 1px solid var(--color-s-01);
+            border-radius: 9999px;
+            box-shadow: var(--box-shadow-depth-01);
+        }
+        
+        .chat-history-controls button {
+            display: inline-flex;
+            background: none;
+            cursor: pointer;
+        }
+        
+        .chat-history-controls button svg {
+            width: calc(var(--spacing) * 4);
+            height: calc(var(--spacing) * 4);
+            fill: var(--color-secondary);
+            transition: fill 0.2s;
+        }
+
+        .chat-history-controls button:hover svg {
+            fill: var(--color-primary);
+        }
+
+        .chat-history-indicator {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 2);
+        }
+
+        .chat-history-dot {
+            display: block;
+            width: calc(var(--spacing) * 0.375);
+            background-color: rgba(18,18,18, 0.3);
+            border-radius: 9999px;
+        }
+
+        .chat-history-dot.short { height: calc(var(--spacing) * 2); }
+        .chat-history-dot.tall { height: calc(var(--spacing) * 3.5); }
+        .chat-history-dot.active { background-color: var(--color-primary); }
+
+        .chat-input-area {
+            display: block;
+            width: 100%;
+            background-color: transparent;
+            min-height: calc(var(--spacing) * 6);
+            margin-bottom: calc(var(--spacing) * 8);
+            padding-left: calc(var(--spacing) * 2);
+            border: none;
+            outline: none;
+            resize: none;
+            font-family: var(--font-sans);
+            font-size: 0.9375rem;
+            line-height: 1.5rem;
+            font-weight: 400;
+            color: var(--color-primary);
+            letter-spacing: -0.02em;
+            transition: opacity 0.3s;
+        }
+
+        .chat-input-area::placeholder {
+            color: var(--color-secondary);
+        }
+
+        .chat-input-area:disabled {
+            opacity: 0.5;
+            cursor: wait;
+        }
+
+        .chat-footer {
+            display: flex;
+            gap: calc(var(--spacing) * 2);
+            align-items: center;
+        }
+
+        .chat-btn {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: calc(var(--spacing) * 10);
+            height: calc(var(--spacing) * 10);
+            background-color: transparent;
+            border: 1px solid var(--color-s-02);
+            border-radius: var(--radius-xl);
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .chat-btn:hover {
+            background-color: var(--color-surface-03);
+        }
+
+        .chat-btn svg {
+            width: calc(var(--spacing) * 5);
+            height: calc(var(--spacing) * 5);
+            fill: var(--color-primary);
+        }
+
+        .mode-selector {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 3);
+            flex-grow: 1;
+            height: calc(var(--spacing) * 10);
+            padding: 0 calc(var(--spacing) * 3);
+            background-color: transparent;
+            border: 1px solid var(--color-s-02);
+            border-radius: var(--radius-xl);
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .mode-selector:hover {
+            border-color: var(--color-secondary);
+            background-color: var(--color-surface-03);
+        }
+
+        .mode-selector .icon-text { flex-grow: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .mode-selector .icon-mode { width: calc(var(--spacing) * 4); height: calc(var(--spacing) * 4); fill: var(--color-green); flex-shrink: 0; }
+        .mode-selector .icon-chevron { width: calc(var(--spacing) * 5); height: calc(var(--spacing) * 5); fill: var(--color-secondary); flex-shrink: 0; }
+
+        .submit-btn {
+            position: relative;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            width: calc(var(--spacing) * 10);
+            height: calc(var(--spacing) * 10);
+            padding: 0;
+            border: none;
+            border-radius: var(--radius-xl);
+            cursor: pointer;
+            color: var(--shade-01);
+            fill: var(--shade-01);
+            box-shadow: 0 0.5px 1px 0px rgba(255,255,255,0.15) inset,
+                        0px 2px 4px -1px rgba(13,13,13,0.50),
+                        0px -1px 1.2px 0.35px var(--shade-09) inset,
+                        0px 0px 0px 1px #333;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            border-radius: inherit;
+            background: linear-gradient(to bottom, var(--shade-07), var(--shade-08));
+            transition: opacity 0.2s;
+        }
+        
+        .submit-btn:hover::before {
+            opacity: 0.9;
+        }
+
+        .submit-btn svg {
+            position: relative;
+            z-index: 2;
+            width: calc(var(--spacing) * 5);
+            height: calc(var(--spacing) * 5);
+            transform: rotate(-90deg);
+        }
+        /* --- END: BEILLESZTETT CHAT-CONTAINER STÍLUSOK --- */
+        
+        /* Right Sidebar */
+        .toggle-switch {
+            width: calc(var(--spacing) * 10);
+            height: calc(var(--spacing) * 5.5);
+            padding: calc(var(--spacing) * 0.5);
+            border: none;
+            background: var(--color-shade-04);
+            border-radius: calc(var(--spacing) * 11);
+            box-shadow: 0px 0px 1px 0.5px rgba(18,18,18,0.10) inset;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .toggle-switch.active {
+            background: rgba(18, 18, 18, 0.7);
+            box-shadow: inset 0 1px 0.6px 0 rgba(18,18,18,0.30);
+        }
+        
+        .toggle-thumb {
+            width: calc(var(--spacing) * 4.5);
+            height: calc(var(--spacing) * 4.5);
+            background: var(--color-surface-02);
+            border-radius: 50%;
+            box-shadow: 0px 1px 0.5px rgba(255,255,255,0.82) inset, 0px 0px 2.6px rgba(0,0,0,0.25), 0px 1px 4px rgba(0,0,0,0.14);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .toggle-switch.active .toggle-thumb {
+            transform: translateX(calc(var(--spacing) * 4.5));
+        }
+        
+        .property-section {
+            border-top: 1px solid var(--color-s-01);
+            padding: calc(var(--spacing) * 3) calc(var(--spacing) * 4);
+        }
+        
+        .property-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: calc(var(--spacing) * 12);
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+        
+        .property-content {
+            padding-top: calc(var(--spacing) * 3);
+        }
+        
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 2);
+        }
+        
+        .dimension-input {
+            position: relative;
+            flex: 1;
+        }
+        
+        .dimension-input label {
+            position: absolute;
+            top: 52%;
+            left: calc(var(--spacing) * 2.5);
+            transform: translateY(-50%);
+            font-size: 0.75rem;
+            color: rgba(123, 123, 123, 0.5);
+            pointer-events: none;
+        }
+        
+        .dimension-input input {
+            width: 100%;
+            height: calc(var(--spacing) * 9);
+            padding-left: calc(var(--spacing) * 7.5);
+            padding-right: calc(var(--spacing) * 2);
+            border: 1px solid var(--color-surface-03);
+            background: var(--color-surface-03);
+            border-radius: calc(var(--spacing) * 2.5);
+            font-size: 0.75rem;
+            color: var(--color-primary);
+            outline: none;
+            transition: all 0.2s;
+        }
+        
+        .dimension-input input:focus {
+            border-color: var(--color-s-02);
+            background: var(--color-surface-02);
+        }
+        
+        /* Material Grid */
+        .material-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: calc(var(--spacing) * 1);
+            margin-top: calc(var(--spacing) * -2);
+        }
+        
+        .material-item {
+            width: calc(50% - calc(var(--spacing) * 0.5));
+            aspect-ratio: 1;
+            padding: calc(var(--spacing) * 1.5);
+            background: var(--color-surface-03);
+            border-radius: var(--radius-2xl);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .material-item::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            box-shadow: 0 0 0 1.5px var(--color-shade-06) inset, 0px 0px 0px 4px var(--color-surface-01) inset;
+            opacity: 0;
+            transition: opacity 0.2s;
+            border-radius: var(--radius-2xl);
+        }
+        
+        .material-item:hover::after {
+            opacity: 1;
+        }
+        
+        .material-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: var(--radius-lg);
+        }
+        
+        /* Range Slider */
+        .range-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: calc(var(--spacing) * 9);
+            background: var(--color-shade-03);
+            border-radius: var(--radius-lg);
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: calc(var(--spacing) * 3.25);
+            height: calc(var(--spacing) * 3.25);
+            background: var(--color-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0px 1px 0.5px rgba(255,255,255,0.82) inset, 0px 0px 2.6px rgba(0,0,0,0.25), 0px 1px 4px rgba(0,0,0,0.14);
+        }
+        
+        .range-slider::-moz-range-thumb {
+            width: calc(var(--spacing) * 3.25);
+            height: calc(var(--spacing) * 3.25);
+            background: var(--color-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0px 1px 0.5px rgba(255,255,255,0.82) inset, 0px 0px 2.6px rgba(0,0,0,0.25), 0px 1px 4px rgba(0,0,0,0.14);
+        }
+        
+        .slider-value {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: calc(var(--spacing) * 1.5);
+            width: calc(var(--spacing) * 19.5);
+            height: calc(var(--spacing) * 9);
+            padding-right: calc(var(--spacing) * 1);
+            background: var(--color-surface-03);
+            border-radius: calc(var(--spacing) * 2.5);
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1340px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .container {
+                padding: calc(var(--spacing) * 3) calc(var(--spacing) * 66);
+            }
+        }
+        
+        /* Icon styles */
+        svg {
+            fill: currentColor;
+        }
+        
+        .icon-sm {
+            width: calc(var(--spacing) * 4);
+            height: calc(var(--spacing) * 4);
+        }
+        
+        .icon-md {
+            width: calc(var(--spacing) * 5);
+            height: calc(var(--spacing) * 5);
+        }
+        
+        /* Tooltip animáció */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        .animate-pulse {
+            animation: var(--animate-pulse);
+        }
+        
+        /* Smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Fokusz stílusok */
+        *:focus-visible {
+            outline: 2px solid var(--color-blue);
+            outline-offset: 2px;
+        }
+        
+        /* Kiválasztás színe */
+        ::selection {
+            background-color: var(--shade-09_35);
+            color: var(--color-white);
+        }
+    </style>
+  <script src="https://www.aura.build/FxFilter.js"></script>
+<link id="all-fonts-link-font-geist" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-geist">.font-geist { font-family: 'Geist', sans-serif !important; }</style><link id="all-fonts-link-font-roboto" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-roboto">.font-roboto { font-family: 'Roboto', sans-serif !important; }</style><link id="all-fonts-link-font-montserrat" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-montserrat">.font-montserrat { font-family: 'Montserrat', sans-serif !important; }</style><link id="all-fonts-link-font-poppins" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-poppins">.font-poppins { font-family: 'Poppins', sans-serif !important; }</style><link id="all-fonts-link-font-playfair" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;900&amp;display=swap"><style id="all-fonts-style-font-playfair">.font-playfair { font-family: 'Playfair Display', serif !important; }</style><link id="all-fonts-link-font-instrument-serif" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:wght@400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-instrument-serif">.font-instrument-serif { font-family: 'Instrument Serif', serif !important; }</style><link id="all-fonts-link-font-merriweather" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700;900&amp;display=swap"><style id="all-fonts-style-font-merriweather">.font-merriweather { font-family: 'Merriweather', serif !important; }</style><link id="all-fonts-link-font-bricolage" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-bricolage">.font-bricolage { font-family: 'Bricolage Grotesque', sans-serif !important; }</style><link id="all-fonts-link-font-jakarta" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap"><style id="all-fonts-style-font-jakarta">.font-jakarta { font-family: 'Plus Jakarta Sans', sans-serif !important; }</style><link id="all-fonts-link-font-manrope" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap"><style id="all-fonts-style-font-manrope">.font-manrope { font-family: 'Manrope', sans-serif !important; }</style><link id="all-fonts-link-font-space-grotesk" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-space-grotesk">.font-space-grotesk { font-family: 'Space Grotesk', sans-serif !important; }</style><link id="all-fonts-link-font-work-sans" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700;800&amp;display=swap"><style id="all-fonts-style-font-work-sans">.font-work-sans { font-family: 'Work Sans', sans-serif !important; }</style><link id="all-fonts-link-font-pt-serif" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&amp;display=swap"><style id="all-fonts-style-font-pt-serif">.font-pt-serif { font-family: 'PT Serif', serif !important; }</style><link id="all-fonts-link-font-geist-mono" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-geist-mono">.font-geist-mono { font-family: 'Geist Mono', monospace !important; }</style><link id="all-fonts-link-font-space-mono" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&amp;display=swap"><style id="all-fonts-style-font-space-mono">.font-space-mono { font-family: 'Space Mono', monospace !important; }</style><link id="all-fonts-link-font-quicksand" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-quicksand">.font-quicksand { font-family: 'Quicksand', sans-serif !important; }</style><link id="all-fonts-link-font-nunito" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&amp;display=swap"><style id="all-fonts-style-font-nunito">.font-nunito { font-family: 'Nunito', sans-serif !important; }</style><link id="all-fonts-link-font-newsreader" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..800&amp;display=swap"><style id="all-fonts-style-font-newsreader">.font-newsreader { font-family: 'Newsreader', serif !important; }</style><link id="all-fonts-link-font-google-sans-flex" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-google-sans-flex">.font-google-sans-flex { font-family: 'Google Sans Flex', sans-serif !important; }</style><link id="all-fonts-link-font-oswald" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-oswald">.font-oswald { font-family: 'Oswald', sans-serif !important; }</style><link id="all-fonts-link-font-dm-sans" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&amp;display=swap"><style id="all-fonts-style-font-dm-sans">.font-dm-sans { font-family: 'DM Sans', sans-serif !important; }</style><script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="max-w-full max-h-full">
+    <div class="container">
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-row">
+                    <div class="logo">P</div>
+                    <button class="btn-icon">
+                        <svg class="icon-md" viewBox="0 0 20 20">
+                            <path d="M4.495 16.608l.34-.668h0l-.34.668zm-1.093-1.093l-.668.341h0l.668-.341zm13.205 0l-.668-.34h0l.668.34zm-1.093 1.093l-.34-.668h0l.34.668zm1.093-12.112l-.668.34h0l.668-.34zm-1.093-1.093l.341-.668h0l-.341.668zM3.402 4.495l.668.34h0l-.668-.34zm1.093-1.093l.34.668h0l-.34-.668zM11.13 16.88v.75h1.5v-.75h-1.5zm1.5-13.75v-.75h-1.5v.75h1.5zm4.25 4h-.75v5.75h.75.75V7.13h-.75zm-4 9.75v-.75H7.13v.75.75h5.75v-.75zm-9.75-4h.75V7.13h-.75-.75v5.75h.75zm4-9.75v.75h5.75v-.75-.75H7.13v.75zm0 13.75v-.75c-.712 0-1.202-.001-1.581-.032-.37-.03-.57-.086-.714-.159l-.34.668-.34.668c.391.199.809.28 1.272.318.455.037 1.015.037 1.703.037v-.75zm-4-4h-.75l.037 1.703c.038.463.119.882.318 1.272l.668-.341.668-.34c-.073-.144-.129-.343-.159-.714-.031-.379-.032-.869-.032-1.581h-.75zm1.365 3.727l.34-.668a1.75 1.75 0 0 1-.765-.765l-.668.34-.668.341a3.25 3.25 0 0 0 1.42 1.42l.34-.668z"></path>
+                        </svg>
+                    </button>
+                </div>
+                <button class="project-selector">
+                    <span class="">PromptCraft</span>
+                    <div class="chevron">
+                        <svg class="icon-sm" viewBox="0 0 20 20">
+                            <path d="M11.371 12.38c-.757.827-1.985.827-2.742 0l-3.36-3.668a1.07 1.07 0 0 1 0-1.418c.359-.392.94-.392 1.299 0l3.36 3.668c.04.044.104.044.144 0l3.36-3.668c.359-.392.94-.392 1.299 0a1.07 1.07 0 0 1 0 1.418l-3.36 3.668z"></path>
+                        </svg>
+                    </div>
+                </button>
+            </div>
+            
+            <!-- START: FRISSÍTETT TAB-SWITCHER MARKUP -->
+            <div class="tab-container">
+                <div class="tab-switcher">
+                    <div class="tab-indicator" id="tabIndicator"></div>
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="switchTab(0, this)">Scene</button>
+                        <button class="tab-btn" onclick="switchTab(1, this)">Assets</button>
+                    </div>
+                </div>
+            </div>
+            <!-- END: FRISSÍTETT TAB-SWITCHER MARKUP -->
+            
+            <div class="sidebar-content">
+                <div class="button-container">
+        <button class="masterclass-button [--fx-filter:blur(10px)_liquid-glass(2.5,10)_saturate(1.25)_noise(0.5,1,0.5)] bg-gradient-to-b from-[#f1f1f1] via-[#ffffff]/70 to-[#f1f1f1]/80" style="mask-image: linear-gradient(290deg, transparent, black 10%, black 85%, transparent); -webkit-mask-image: linear-gradient(290deg, transparent, black 10%, black 85%, transparent);">
+            <div class="toolbar-btn active shadow-xl -translate-x-6 scale-50">
+                <svg viewBox="0 0 20 20" aria-hidden="true" class="">
+                    <path d="M2.96 12.453a.96.96 0 0 1 .96.96v1.92c0 .412.334.747.747.747h1.92a.96.96 0 1 1 0 1.92h-1.92C3.194 18 2 16.806 2 15.333v-1.92a.96.96 0 0 1 .96-.96zm14.08 0a.96.96 0 0 1 .96.96v1.92C18 16.806 16.806 18 15.333 18h-1.92a.96.96 0 1 1 0-1.92h1.92c.412 0 .747-.334.747-.747v-1.92a.96.96 0 0 1 .96-.96zM10 6.267c2.062 0 3.733 1.671 3.733 3.733S12.062 13.733 10 13.733 6.267 12.062 6.267 10 7.938 6.267 10 6.267zm0 1.92c-1.001 0-1.813.812-1.813 1.813s.812 1.813 1.813 1.813 1.813-.812 1.813-1.813S11.001 8.187 10 8.187zM6.587 2a.96.96 0 1 1 0 1.92h-1.92c-.412 0-.747.334-.747.747v1.92a.96.96 0 1 1-1.92 0v-1.92C2 3.194 3.194 2 4.667 2h1.92zm8.747 0C16.806 2 18 3.194 18 4.667v1.92a.96.96 0 1 1-1.92 0v-1.92c0-.412-.334-.747-.747-.747h-1.92a.96.96 0 1 1 0-1.92h1.92z" class=""></path>
+                </svg>
+            </div>
+            <span class="button-text">Masterclass Button</span>
+        
+                
+                
+            
+                
+                
+            
+                
+                
+            </button>
+        
+        
+    </div>
+                
+                <div class="item-card">
+  <div class="item-icon">
+    <svg class="icon-sm" viewBox="0 0 20 20">
+      <path d="M8.693 1.837a2.7 2.7 0 0 1 2.615 0l5.333 2.955A2.62 2.62 0 0 1 18 7.082v5.836a2.62 2.62 0 0 1-1.359 2.29l-5.333 2.955a2.7 2.7 0 0 1-2.615 0l-5.333-2.955A2.62 2.62 0 0 1 2 12.918V7.082a2.62 2.62 0 0 1 1.359-2.29l5.333-2.955z">
+      </path>
+    </svg>
+  </div>
+  <span class="item-text">Main Object</span>
+</div>
+                
+                <div class="item-card">
+                    <div class="item-icon">
+                        <svg class="icon-sm" viewBox="0 0 20 20">
+                            <path d="M8.693 1.837a2.7 2.7 0 0 1 2.615 0l5.333 2.955A2.62 2.62 0 0 1 18 7.082v5.836a2.62 2.62 0 0 1-1.359 2.29l-5.333 2.955a2.7 2.7 0 0 1-2.615 0l-5.333-2.955A2.62 2.62 0 0 1 2 12.918V7.082a2.62 2.62 0 0 1 1.359-2.29l5.333-2.955z" class=""></path>
+                        </svg>
+                    </div>
+                    <span class="item-text">Lighting Setup</span>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="search-container">
+                    <div class="search-icon">
+                        <svg class="icon-sm" style="fill: var(--color-secondary);" viewBox="0 0 20 20">
+                            <path d="M9.147 2a7.15 7.15 0 0 1 7.147 7.147 7.12 7.12 0 0 1-1.406 4.257l-.056.07 2.887 2.887a.96.96 0 0 1 .093 1.25l-.093.108a.96.96 0 0 1-1.358 0l-2.887-2.887-.07.056c-1.121.833-2.471 1.326-3.899 1.397l-.359.009A7.15 7.15 0 0 1 2 9.147 7.15 7.15 0 0 1 9.147 2z"></path>
+                        </svg>
+                    </div>
+                    <input type="text" class="search-input" placeholder="History">
+                    <div class="keyboard-shortcut">⌘ K</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Canvas Area -->
+        <div class="canvas-area">
+            <div style="text-align: center" class="translate-x-16">
+  <div style="font-size: 4rem; margin-bottom: 1rem" class="">🎨</div>
+  <div style="font-size: 1.2rem; font-weight: 600; color: var(--color-primary); margin-bottom: 0.5rem;" class="">Your
+    Canvas
+  </div>
+  <div style="font-size: 0.9rem;" class="">Start creating your 3D masterpiece</div>
+</div>
+        </div>
+        
+        <!-- Right Sidebar -->
+        <div class="sidebar translate-x-16">
+            <div class="sidebar-header">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; margin-left: calc(var(--spacing) * -2);">
+                        <div style="width: calc(var(--spacing) * 8); height: calc(var(--spacing) * 8); border: 2px solid var(--color-surface-01); border-radius: 50%; overflow: hidden; z-index: 2; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                        <div style="width: calc(var(--spacing) * 8); height: calc(var(--spacing) * 8); border: 2px solid var(--color-surface-01); border-radius: 50%; margin-left: calc(var(--spacing) * -2); z-index: 1; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+                    </div>
+                    <button class="primary-btn">Share</button>
+                </div>
+            </div>
+            
+            <!-- START: FRISSÍTETT TAB-SWITCHER MARKUP -->
+            <div class="tab-container">
+                <div class="tab-switcher">
+                    <div class="tab-indicator" id="rightTabIndicator"></div>
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="switchRightTab(0, this)">Design</button>
+                        <button class="tab-btn" onclick="switchRightTab(1, this)">Animation</button>
+                    </div>
+                </div>
+            </div>
+            <!-- END: FRISSÍTETT TAB-SWITCHER MARKUP -->
+            
+            <div class="sidebar-content">
+                <div class="property-section" style="border-top: none;">
+                    <div class="property-header">
+                        <span class="">Show Frame</span>
+                        <button class="toggle-switch active" id="frameToggle" onclick="toggleSwitch('frameToggle')">
+                            <div class="toggle-thumb"></div>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="property-section">
+                    <div class="property-header">
+                        <span>Artboard</span>
+                        <button class="btn-icon">
+                            <svg class="icon-sm" viewBox="0 0 20 20">
+                                <path d="M10 4a.95.95 0 0 1 .947.947v4.105h4.105a.95.95 0 0 1 .939.819L16 10a.95.95 0 0 1-.947.947h-4.105v4.105a.95.95 0 0 1-.819.939L10 16a.95.95 0 0 1-.947-.947v-4.105H4.947a.95.95 0 0 1-.939-.819L4 10a.95.95 0 0 1 .947-.947h4.105V4.947a.95.95 0 0 1 .819-.939L10 4z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="property-content">
+                        <div class="input-group">
+                            <div class="dimension-input">
+                                <label>W</label>
+                                <input type="text" value="800">
+                            </div>
+                            <div class="dimension-input">
+                                <label>H</label>
+                                <input type="text" value="600">
+                            </div>
+                            <div style="width: calc(var(--spacing) * 6); text-align: center; color: var(--color-secondary); font-size: 0.75rem; flex-shrink: 0;">px</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="property-section">
+                    <div class="property-header">
+                        <span>Materials</span>
+                        <button class="btn-icon">
+                            <svg class="icon-sm" viewBox="0 0 20 20">
+                                <path d="M10 4a.95.95 0 0 1 .947.947v4.105h4.105a.95.95 0 0 1 .939.819L16 10a.95.95 0 0 1-.947.947h-4.105v4.105a.95.95 0 0 1-.819.939L10 16a.95.95 0 0 1-.947-.947v-4.105H4.947a.95.95 0 0 1-.939-.819L4 10a.95.95 0 0 1 .947-.947h4.105V4.947a.95.95 0 0 1 .819-.939L10 4z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="property-content" style="padding-top: 0;">
+                        <div class="material-grid">
+                            <div class="material-item">
+                                <div class="material-placeholder"></div>
+                            </div>
+                            <div class="material-item">
+                                <div class="material-placeholder" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+                            </div>
+                            <div class="material-item">
+                                <div class="material-placeholder" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
+                            </div>
+                            <div class="material-item">
+                                <div class="material-placeholder" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="property-section">
+                    <div class="property-header">
+                        <span>Camera</span>
+                        <button class="btn-icon">
+                            <svg class="icon-sm" viewBox="0 0 20 20">
+                                <path d="M10 4a.95.95 0 0 1 .947.947v4.105h4.105a.95.95 0 0 1 .939.819L16 10a.95.95 0 0 1-.947.947h-4.105v4.105a.95.95 0 0 1-.819.939L10 16a.95.95 0 0 1-.947-.947v-4.105H4.947a.95.95 0 0 1-.939-.819L4 10a.95.95 0 0 1 .947-.947h4.105V4.947a.95.95 0 0 1 .819-.939L10 4z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="property-content">
+                        <!-- START: FRISSÍTETT TAB-SWITCHER MARKUP -->
+                        <div class="tab-switcher">
+                            <div class="tab-indicator" id="cameraTabIndicator"></div>
+                            <div class="tab-buttons">
+                                <button class="tab-btn active" onclick="switchCameraTab(0, this)">Isometric</button>
+                                <button class="tab-btn" onclick="switchCameraTab(1, this)">Perspective</button>
+                            </div>
+                        </div>
+                        <!-- END: FRISSÍTETT TAB-SWITCHER MARKUP -->
+                        <div style="padding-top: calc(var(--spacing) * 3);" class="">
+                            <div style="padding: 0 calc(var(--spacing) * 1);" class="">
+                                <div style="margin-bottom: calc(var(--spacing) * 2); font-size: 0.75rem;" class="">Distortion</div>
+                                <div class="input-group">
+                                    <input type="range" class="range-slider" min="0" max="1" step="0.001" value="0.283" id="distortionSlider" oninput="updateSlider(this)" style="background: linear-gradient(to right, rgba(123, 123, 123, 0.3) 0%, rgba(123, 123, 123, 0.3) 28.299999999999997%, var(--color-shade-03) 28.299999999999997%, var(--color-shade-03) 100%);">
+                                    <div class="slider-value">
+                                        <svg style="fill: rgba(123, 123, 123, 0.7);" width="16" height="16" viewBox="0 0 20 20">
+                                            <path d="M3.818 5.789a.93.93 0 0 1 1.348 0c.372.386.372 1.011 0 1.397L3.403 9.011h13.193l-1.762-1.825c-.338-.351-.369-.899-.092-1.286l.092-.111a.93.93 0 0 1 1.348 0l2.791 2.891c.703.729.703 1.91 0 2.639l-2.79 2.891a.93.93 0 0 1-1.348 0c-.372-.386-.372-1.011 0-1.397l1.762-1.827H3.403l1.763 1.827c.338.351.369.899.092 1.286l-.092.111a.93.93 0 0 1-1.348 0l-2.79-2.891c-.703-.729-.703-1.91 0-2.639l2.79-2.891z"></path>
+                                        </svg>
+                                        <span id="distortionValue" class="">0.283</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- START: KICSERÉLT TOOLBAR KOMPONENS -->
+    <div class="toolbar -translate-x-16">
+        <div class="toolbar-group">
+            <button class="toolbar-btn active" data-action="select" aria-label="Select">
+                <svg viewBox="0 0 20 20" class="w-[20px] h-[20px]" stroke-width="2" data-icon-replaced="true" style="color: rgb(18, 18, 18); width: 20px; height: 20px;"><path d="M1.933 4.477C1.388 2.9 2.9 1.388 4.477 1.933l12.361 4.272c1.742.602 1.812 3.04.107 3.74l-4.768 1.959a.5.5 0 0 0-.272.272l-1.959 4.768c-.7 1.705-3.138 1.635-3.74-.107L1.933 4.477zm2.054-1.126a.5.5 0 0 0-.636.636l4.272 12.361a.5.5 0 0 0 .935.027l1.959-4.768a2 2 0 0 1 1.09-1.09l4.768-1.959a.5.5 0 0 0-.027-.935L3.987 3.351z" class=""></path></svg>
+            </button>
+            <button class="toolbar-btn" data-action="move" aria-label="Move">
+                <svg viewBox="0 0 20 20" class=""><path d="M5.248 2.727c1.188-.713 2.709-.289 3.387.932l1.34 2.414 3.053-1.832c1.543-.927 3.504-.427 4.461 1.093l.099.167.785 1.414c1.895 3.412.771 7.774-2.523 9.751-2.226 1.337-4.986 1.28-7.16-.145L4.038 13.47a.75.75 0 0 1-.331-.736l.155-1.06c.178-1.216 1.173-2.106 2.333-2.156l.01-.001-1.857-3.344a2.58 2.58 0 0 1 .756-3.354l.142-.092zm2.076 1.661c-.27-.486-.849-.647-1.304-.375-.472.283-.638.929-.359 1.432l2.576 4.639a.75.75 0 0 1-.773 1.105l-1.02-.161c-.519-.082-1.014.296-1.097.864l-.087.586 4.253 2.79c1.622 1.064 3.655 1.148 5.347.238l.219-.124c2.595-1.558 3.489-5.026 1.984-7.737l-.785-1.414c-.507-.913-1.611-1.221-2.477-.701l-3.718 2.232a.75.75 0 0 1-1.042-.279L7.324 4.387zM1.187 6.084a.75.75 0 1 1 1.4.538c-.503 1.309-.503 2.45 0 3.759a.75.75 0 1 1-1.4.538 6.36 6.36 0 0 1 0-4.835z" class=""></path></svg>
+            </button>
+            <button class="toolbar-btn" data-action="comment" aria-label="Comment">
+                <svg viewBox="0 0 20 20" class=""><path d="M14.38 1.75A3.25 3.25 0 0 1 17.63 5v7.917a3.25 3.25 0 0 1-3.25 3.25H6.702c-.016 0-.031.004-.044.013l-3.131 1.957A.75.75 0 0 1 2.38 17.5V5a3.25 3.25 0 0 1 3.25-3.25h8.75zm0 1.5H5.63A1.75 1.75 0 0 0 3.88 5v11.147l1.983-1.24c.201-.126.428-.204.662-.231l.177-.01h7.678a1.75 1.75 0 0 0 1.75-1.75V5a1.75 1.75 0 0 0-1.75-1.75z"></path></svg>
+            </button>
+            <button class="toolbar-btn" data-action="frame" aria-label="Frame">
+                <svg viewBox="0 0 20 20" class=""><path d="M4.79 1.54a.75.75 0 0 1 .75.75v1.75h7.167a3.25 3.25 0 0 1 3.245 3.066l.005.184-.001 7.166 1.751.001a.75.75 0 0 1 .743.648l.007.102a.75.75 0 0 1-.75.75l-1.751-.001.001 1.751a.75.75 0 0 1-.648.743l-.102.007a.75.75 0 0 1-.75-.75l-.001-1.751-7.166.001a3.25 3.25 0 0 1-3.245-3.066l-.005-.184V5.54H2.29a.75.75 0 0 1-.743-.648L1.54 4.79a.75.75 0 0 1 .75-.75h1.75V2.29a.75.75 0 0 1 .648-.743l.102-.007zm.75 4v7.167a1.75 1.75 0 0 0 1.75 1.75l7.166-.001.001-7.166a1.75 1.75 0 0 0-1.606-1.744l-.144-.006H5.54z"></path></svg>
+            </button>
+            <button class="toolbar-btn" data-action="play" aria-label="Play Animation">
+                <svg viewBox="0 0 20 20" class=""><path d="M3.5 5.756c0-2.979 3.306-4.768 5.8-3.14l6.512 4.251c2.267 1.48 2.267 4.801 0 6.28L9.3 17.398c-2.494 1.628-5.8-.161-5.8-3.14V5.756zm4.98-1.884C6.983 2.895 5 3.969 5 5.756v8.501c0 1.787 1.983 2.861 3.48 1.884l6.512-4.251a2.25 2.25 0 0 0 0-3.768L8.48 3.872z"></path></svg>
+            </button>
+            
+            <button class="zoom-selector-btn" id="zoom-selector" aria-label="Zoom Level">
+                <span id="zoom-level" class="">100%</span>
+                <svg viewBox="0 0 20 20" class=""><path d="M11.371 12.38c-.757.827-1.985.827-2.742 0l-3.36-3.668a1.07 1.07 0 0 1 0-1.418c.359-.392.94-.392 1.299 0l3.36 3.668c.04.044.104.044.144 0l3.36-3.668c.359-.392.94-.392 1.299 0a1.07 1.07 0 0 1 0 1.418l-3.36 3.668z"></path></svg>
+            </button>
+
+            <button class="toolbar-btn disabled" data-action="undo" aria-label="Undo (Ctrl+Z)">
+                <svg style="transform: rotate(180deg);" viewBox="0 0 20 20" class=""><path d="M12.183 4.3a.75.75 0 0 1 1.061 0l3.44 3.441a3.25 3.25 0 0 1 0 4.596l-3.44 3.441a.75.75 0 0 1-1.061-1.061l3.441-3.441a1.75 1.75 0 0 0 .298-.397l.043-.091H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h12.836l-.044-.09c-.052-.095-.114-.186-.184-.272l-.114-.125-3.44-3.441a.75.75 0 0 1 0-1.061z"></path></svg>
+            </button>
+            <button class="toolbar-btn" data-action="redo" aria-label="Redo (Ctrl+Y)">
+                <svg viewBox="0 0 20 20"><path d="M12.183 4.3a.75.75 0 0 1 1.061 0l3.44 3.441a3.25 3.25 0 0 1 0 4.596l-3.44 3.441a.75.75 0 0 1-1.061-1.061l3.441-3.441a1.75 1.75 0 0 0 .298-.397l.043-.091H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h12.836l-.044-.09c-.052-.095-.114-.186-.184-.272l-.114-.125-3.44-3.441a.75.75 0 0 1 0-1.061z"></path></svg>
+            </button>
+        </div>
+
+        <div class="toolbar-group">
+            <button class="primary-btn" data-action="export">Export</button>
+        </div>
+    </div>
+    <!-- END: KICSERÉLT TOOLBAR KOMPONENS -->
+    
+    <!-- START: KICSERÉLT CHAT-CONTAINER KOMPONENS -->
+    <div class="chat-container -translate-x-16">
+        <div class="chat-history-controls">
+            <button aria-label="Previous history item">
+                <svg viewBox="0 0 20 20" style="transform: rotate(180deg);"><path d="M12.183 4.3a.75.75 0 0 1 1.061 0l3.44 3.441a3.25 3.25 0 0 1 0 4.596l-3.44 3.441a.75.75 0 0 1-1.061-1.061l3.441-3.441a1.75 1.75 0 0 0 .298-.397l.043-.091H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h12.836l-.044-.09c-.052-.095-.114-.186-.184-.272l-.114-.125-3.44-3.441a.75.75 0 0 1 0-1.061z"></path></svg>
+            </button>
+            <div class="chat-history-indicator">
+                <span class="chat-history-dot short"></span>
+                <span class="chat-history-dot tall active"></span>
+                <span class="chat-history-dot short"></span>
+                <span class="chat-history-dot short"></span>
+                <span class="chat-history-dot short"></span>
+                <span class="chat-history-dot tall active"></span>
+                <span class="chat-history-dot short"></span>
+            </div>
+            <button aria-label="Next history item">
+                <svg viewBox="0 0 20 20"><path d="M12.183 4.3a.75.75 0 0 1 1.061 0l3.44 3.441a3.25 3.25 0 0 1 0 4.596l-3.44 3.441a.75.75 0 0 1-1.061-1.061l3.441-3.441a1.75 1.75 0 0 0 .298-.397l.043-.091H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h12.836l-.044-.09c-.052-.095-.114-.186-.184-.272l-.114-.125-3.44-3.441a.75.75 0 0 1 0-1.061z"></path></svg>
+            </button>
+        </div>
+        
+        <textarea class="chat-input-area" id="chat-textarea" placeholder="Describe your 3D object or scene..." rows="1" style="height: 24px;"></textarea>
+        
+        <div class="chat-footer">
+            <button class="chat-btn" aria-label="Attach file">
+                <svg viewBox="0 0 20 20"><path d="M10.005 2.38a.75.75 0 0 1 .75.75v6.125h6.125a.75.75 0 0 1 .743.648l.007.102a.75.75 0 0 1-.75.75h-6.125v6.125a.75.75 0 0 1-.648.743l-.102.007a.75.75 0 0 1-.75-.75v-6.125H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h6.125V3.13a.75.75 0 0 1 .648-.743l.102-.007z"></path></svg>
+            </button>
+            <button class="mode-selector">
+                <svg class="icon-mode" viewBox="0 0 20 20"><path d="M9.149 1.683c.852-1.272 2.787-.651 2.787.894v3.749l4.033.001c1.18 0 1.896 1.307 1.338 2.335l-.08.132-6.376 9.522c-.852 1.272-2.787.651-2.787-.894l-.001-3.751-4.032.001c-1.18 0-1.896-1.307-1.338-2.336l.08-.132 6.376-9.522z"></path></svg>
+                <span class="icon-text">Inspiration</span>
+                <svg class="icon-chevron" viewBox="0 0 20 20"><path d="M11.371 12.38c-.757.827-1.985.827-2.742 0l-3.36-3.668a1.07 1.07 0 0 1 0-1.418c.359-.392.94-.392 1.299 0l3.36 3.668c.04.044.104.044.144 0l3.36-3.668c.359-.392.94-.392 1.299 0a1.07 1.07 0 0 1 0 1.418l-3.36 3.668z"></path></svg>
+            </button>
+            <button class="submit-btn" id="submit-prompt-btn" aria-label="Submit prompt">
+                <svg viewBox="0 0 20 20"><path d="M12.183 4.3a.75.75 0 0 1 1.061 0l3.44 3.441a3.25 3.25 0 0 1 0 4.596l-3.44 3.441a.75.75 0 0 1-1.061-1.061l3.441-3.441a1.75 1.75 0 0 0 .298-.397l.043-.091H3.13a.75.75 0 0 1-.743-.648l-.007-.102a.75.75 0 0 1 .75-.75h12.836l-.044-.09c-.052-.095-.114-.186-.184-.272l-.114-.125-3.44-3.441a.75.75 0 0 1 0-1.061z"></path></svg>
+            </button>
+        </div>
+    </div>
+    <!-- END: KICSERÉLT CHAT-CONTAINER KOMPONENS -->
+    
+    <script>
+        // --- START: FRISSÍTETT JAVASCRIPT LOGIKA ---
+
+        // Robusztusabb tab-váltó funkció, amely a kontextusán belül működik
+        function switchTabFor(indicatorId, index, clickedButton) {
+            const indicator = document.getElementById(indicatorId);
+            if (!indicator) return;
+
+            const buttons = clickedButton.parentElement.querySelectorAll('.tab-btn');
+            
+            indicator.style.transform = `translateX(${index * 100}%)`;
+
+            buttons.forEach(btn => btn.classList.remove('active'));
+            clickedButton.classList.add('active');
+        }
+
+        // Wrapper funkciók a különböző tab-csoportokhoz
+        function switchTab(index, clickedButton) {
+            switchTabFor('tabIndicator', index, clickedButton);
+        }
+        
+        function switchRightTab(index, clickedButton) {
+            switchTabFor('rightTabIndicator', index, clickedButton);
+        }
+        
+        function switchCameraTab(index, clickedButton) {
+            switchTabFor('cameraTabIndicator', index, clickedButton);
+        }
+        
+        // Toggle switch
+        function toggleSwitch(id) {
+            const toggle = document.getElementById(id);
+            toggle.classList.toggle('active');
+        }
+        
+        // Slider update
+        function updateSlider(slider) {
+            const value = slider.value;
+            const percentage = (value / slider.max) * 100;
+            slider.style.background = `linear-gradient(to right, rgba(123, 123, 123, 0.3) 0%, rgba(123, 123, 123, 0.3) ${percentage}%, var(--color-shade-03) ${percentage}%, var(--color-shade-03) 100%)`;
+            document.getElementById('distortionValue').textContent = parseFloat(value).toFixed(3);
+        }
+        
+        // Inicializáló script, amely az oldal betöltődése után fut le
+        window.addEventListener('DOMContentLoaded', () => {
+            // Slider inicializálása
+            const slider = document.getElementById('distortionSlider');
+            if (slider) {
+                updateSlider(slider);
+            }
+            
+            // BEILLESZTETT TEXTAREA AUTO-RESIZE SCRIPT
+            const textarea = document.getElementById('chat-textarea');
+            if (textarea) {
+                const initialHeight = textarea.clientHeight;
+
+                function autoResize() {
+                    textarea.style.height = 'auto'; 
+                    textarea.style.height = Math.max(initialHeight, textarea.scrollHeight) + 'px';
+                }
+
+                textarea.addEventListener('input', autoResize);
+                autoResize(); // Kezdeti méretezés
+            }
+            
+            // Pulzáló animáció hozzáadása a canvas vezérlőhöz
+            const layerDots = document.querySelectorAll('.layer-dot.active');
+            layerDots.forEach((dot, index) => {
+                setTimeout(() => {
+                    dot.classList.add('animate-pulse');
+                }, index * 200);
+            });
+        });
+
+        // --- END: FRISSÍTETT JAVASCRIPT LOGIKA ---
+    </script>
+
+</body></html>
