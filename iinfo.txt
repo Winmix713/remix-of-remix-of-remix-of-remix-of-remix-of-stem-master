@@ -1,1 +1,523 @@
-Refactor - redesign pro version a user-friendly web interface for a prototyping tool named "PromptCraft". The layout includes:  1. **Left Sidebar**:     - Logo at the top, followed by a project selector button that displays the current project name.    - A tab switcher below the project selector with two tabs: "Scene" and "Assets".    - Content area featuring a "Masterclass Button" styled like a sleek, modern button with a gradient background and interactive hover effects.    - Two item cards displaying "Main Object" and "Lighting Setup", each with an icon and text.  2. **Central Canvas Area**:     - A large, centered area displaying a canvas where users can visualize their 3D masterpiece, with a welcoming message to encourage creativity.  3. **Right Sidebar**:     - A toggle switch to show/hide the frame around the canvas.    - A section for adjusting the artboard dimensions with input fields for width and height, including accompanying labels.    - A materials section displayed as a grid with material placeholders.    - A camera settings area with tabs for "Isometric" and "Perspective", including a distortion slider with a dynamic value display.  4. **Toolbar**:     - A fixed toolbar with action buttons for 'Select', 'Move', 'Comment', 'Frame', and 'Play Animation'.    - A zoom level selector displaying the current zoom percentage.    - Undo and redo buttons for workflow management.    - An export button for sharing the creation.  5. **Chat Container**:     - A chat area at the bottom of the interface for user input, featuring a text area for typing descriptions of the 3D object or scene, with history navigation buttons and an attach file option.  Ensure all components are visually appealing, responsive, and interactive while maintaining a clean and modern design aesthetic.
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <title>PromptCraft – Prototyping Studio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Iconify -->
+  <script src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
+</head>
+<body class="min-h-screen bg-gray-100 text-gray-900 antialiased flex flex-col">
+  <div class="flex flex-col min-h-screen bg-gray-100 text-gray-900">
+
+    <!-- Top Toolbar -->
+    <header class="z-20 border-b border-gray-200 bg-white/80 backdrop-blur shadow-md">
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 py-3">
+        <!-- Left group: Logo + primary tools -->
+        <div class="flex items-center gap-4">
+          <!-- Logo -->
+          <div class="flex items-center gap-2">
+            <iconify-icon icon="simple-icons:openai" class="w-8 h-8 text-gray-900"></iconify-icon>
+            <div class="flex flex-col leading-tight">
+              <span class="text-lg font-semibold tracking-tight">PromptCraft</span>
+              <span class="text-xs text-gray-500">3D prompt prototyping</span>
+            </div>
+          </div>
+
+          <!-- Tool buttons -->
+          <div class="hidden md:flex items-center gap-1 border border-gray-200 rounded-full bg-gray-50/80 px-1.5 py-0.5">
+            <!-- Select -->
+            <button class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-gray-900 bg-white shadow-sm border border-gray-200">
+              <iconify-icon icon="solar:cursor-bold-duotone" class="w-3.5 h-3.5 text-gray-900"></iconify-icon>
+              <span>Select</span>
+            </button>
+            <!-- Move -->
+            <button class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition">
+              <iconify-icon icon="solar:arrows-up-down-linear" class="w-3.5 h-3.5"></iconify-icon>
+              <span>Move</span>
+            </button>
+            <!-- Comment -->
+            <button class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition">
+              <iconify-icon icon="solar:chat-line-linear" class="w-3.5 h-3.5"></iconify-icon>
+              <span>Comment</span>
+            </button>
+            <!-- Frame -->
+            <button class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition">
+              <iconify-icon icon="solar:frame-linear" class="w-3.5 h-3.5"></iconify-icon>
+              <span>Frame</span>
+            </button>
+            <!-- Play Animation -->
+            <button class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition">
+              <iconify-icon icon="solar:play-circle-linear" class="w-3.5 h-3.5"></iconify-icon>
+              <span>Play</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Center: Zoom + history -->
+        <div class="flex items-center gap-3">
+          <!-- Undo / Redo -->
+          <div class="flex items-center gap-1 border border-gray-200 rounded-full bg-gray-50/80 px-1 py-0.5">
+            <button class="inline-flex items-center justify-center rounded-full w-7 h-7 hover:bg-white text-gray-600">
+              <iconify-icon icon="solar:arrow-left-linear" class="w-3.5 h-3.5"></iconify-icon>
+            </button>
+            <button class="inline-flex items-center justify-center rounded-full w-7 h-7 hover:bg-white text-gray-600">
+              <iconify-icon icon="solar:arrow-right-linear" class="w-3.5 h-3.5"></iconify-icon>
+            </button>
+          </div>
+
+          <!-- Zoom selector -->
+          <div class="hidden sm:flex items-center gap-1 border border-gray-200 rounded-full bg-gray-50/80 px-2 py-0.5">
+            <button class="inline-flex items-center justify-center rounded-full w-7 h-7 hover:bg-white text-gray-600">
+              <iconify-icon icon="solar:minus-circle-linear" class="w-3.5 h-3.5"></iconify-icon>
+            </button>
+            <span class="text-xs font-medium text-gray-800 px-1">125%</span>
+            <button class="inline-flex items-center justify-center rounded-full w-7 h-7 hover:bg-white text-gray-600">
+              <iconify-icon icon="solar:add-circle-linear" class="w-3.5 h-3.5"></iconify-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Export + profile -->
+        <div class="flex items-center gap-3">
+          <!-- Export -->
+          <button class="inline-flex items-center gap-1.5 rounded-full bg-gray-900 text-gray-50 text-xs font-medium px-3 py-1.5 shadow-md hover:bg-gray-800 transition">
+            <iconify-icon icon="solar:export-linear" class="w-3.5 h-3.5 text-gray-50"></iconify-icon>
+            <span>Export</span>
+          </button>
+          <!-- Profile mini -->
+          <button class="hidden sm:flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2.5 py-1 hover:bg-gray-50 transition">
+            <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 via-sky-400 to-emerald-400"></div>
+            <span class="text-xs font-medium text-gray-700">Studio</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main 3-column layout -->
+    <main class="flex-1 flex flex-col">
+      <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4">
+        <!-- LEFT SIDEBAR -->
+        <section class="flex flex-col border border-gray-200 bg-white shadow-md rounded-2xl overflow-hidden">
+          <!-- Project header -->
+          <div class="border-b border-gray-200 bg-gray-50/80 px-3 sm:px-4 py-3 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="solar:box-linear" class="w-4 h-4 text-gray-700"></iconify-icon>
+              <div class="flex flex-col leading-tight">
+                <span class="text-xs font-medium text-gray-700 tracking-tight">Current project</span>
+                <span class="text-sm font-semibold text-gray-900 tracking-tight truncate">Studio Scene · Concept v2</span>
+              </div>
+            </div>
+            <!-- Project selector -->
+            <button class="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">
+              <span>Switch</span>
+              <iconify-icon icon="solar:alt-arrow-down-linear" class="w-3 h-3"></iconify-icon>
+            </button>
+          </div>
+
+          <!-- Tabs -->
+          <div class="border-b border-gray-200 flex items-center justify-between px-2.5 sm:px-4 py-2">
+            <div class="flex items-center gap-1.5">
+              <button class="relative inline-flex items-center gap-1 rounded-full bg-gray-900 text-gray-50 text-xs font-medium px-2.5 py-1.5">
+                <iconify-icon icon="solar:scene-linear" class="w-3.5 h-3.5 text-gray-50"></iconify-icon>
+                <span>Scene</span>
+              </button>
+              <button class="inline-flex items-center gap-1 rounded-full text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 px-2.5 py-1.5">
+                <iconify-icon icon="solar:folder-linear" class="w-3.5 h-3.5"></iconify-icon>
+                <span>Assets</span>
+              </button>
+            </div>
+            <button class="inline-flex items-center justify-center rounded-full w-7 h-7 hover:bg-gray-100 text-gray-500">
+              <iconify-icon icon="solar:settings-linear" class="w-3.5 h-3.5"></iconify-icon>
+            </button>
+          </div>
+
+          <!-- Content -->
+          <div class="flex-1 flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 overflow-y-auto">
+            <!-- Masterclass Button -->
+            <div class="relative rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-500 via-sky-500 to-emerald-400 text-gray-50 shadow-md">
+              <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_top,_white,transparent_55%)]"></div>
+              <div class="relative p-3 sm:p-4 flex flex-col gap-2">
+                <div class="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-2 py-1 text-xs font-medium">
+                  <iconify-icon icon="solar:videocamera-record-linear" class="w-3.5 h-3.5 text-gray-50"></iconify-icon>
+                  <span>Masterclass</span>
+                </div>
+                <div>
+                  <h2 class="text-sm sm:text-base font-semibold tracking-tight">Design a cinematic 3D frame</h2>
+                  <p class="text-xs sm:text-sm text-gray-100/80 mt-1">
+                    Learn how to prompt and tweak lighting, cameras, and materials to get production-ready scenes.
+                  </p>
+                </div>
+                <div class="flex items-center justify-between gap-2 mt-2">
+                  <button class="inline-flex items-center gap-1.5 rounded-full bg-white/90 text-gray-900 text-xs font-medium px-3 py-1.5 hover:bg-white transition">
+                    <iconify-icon icon="solar:play-circle-linear" class="w-3.5 h-3.5 text-gray-900"></iconify-icon>
+                    <span>Watch 4 min intro</span>
+                  </button>
+                  <button class="inline-flex items-center justify-center rounded-full w-7 h-7 bg-white/10 text-gray-50 hover:bg-white/15">
+                    <iconify-icon icon="solar:alt-arrow-right-linear" class="w-3.5 h-3.5"></iconify-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Item cards -->
+            <div class="flex flex-col gap-2.5 sm:gap-3">
+              <!-- Main Object -->
+              <article class="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50/80 hover:bg-white hover:shadow-sm transition cursor-pointer p-3">
+                <div class="shrink-0 w-9 h-9 rounded-lg bg-gradient-to-tr from-indigo-500 via-sky-500 to-cyan-400 flex items-center justify-center">
+                  <iconify-icon icon="solar:cube-linear" class="w-4 h-4 text-white"></iconify-icon>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-2">
+                    <h3 class="text-sm font-semibold tracking-tight text-gray-900 truncate">Main Object</h3>
+                    <span class="text-[0.65rem] font-medium text-gray-500 bg-white border border-gray-200 rounded-full px-1.5 py-0.5">Hero</span>
+                  </div>
+                  <p class="text-sm text-gray-600 mt-0.5">
+                    Define the primary object, its style, and level of detail for the scene.
+                  </p>
+                </div>
+              </article>
+
+              <!-- Lighting Setup -->
+              <article class="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50/80 hover:bg-white hover:shadow-sm transition cursor-pointer p-3">
+                <div class="shrink-0 w-9 h-9 rounded-lg bg-gradient-to-tr from-amber-400 via-orange-500 to-rose-500 flex items-center justify-center">
+                  <iconify-icon icon="solar:sun-2-linear" class="w-4 h-4 text-white"></iconify-icon>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-2">
+                    <h3 class="text-sm font-semibold tracking-tight text-gray-900 truncate">Lighting Setup</h3>
+                    <span class="text-[0.65rem] font-medium text-amber-700 bg-amber-50 border border-amber-100 rounded-full px-1.5 py-0.5">Studio</span>
+                  </div>
+                  <p class="text-sm text-gray-600 mt-0.5">
+                    Configure key, fill, and rim lights to shape your object with depth and drama.
+                  </p>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <!-- CENTRAL CANVAS AREA -->
+        <section class="flex flex-col border border-gray-200 bg-white shadow-md rounded-2xl overflow-hidden">
+          <!-- Canvas header -->
+          <div class="border-b border-gray-200 bg-gray-50/80 px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="solar:monitor-camera-linear" class="w-4 h-4 text-gray-700"></iconify-icon>
+              <div class="flex flex-col leading-tight">
+                <span class="text-xs font-medium text-gray-700 tracking-tight">Scene canvas</span>
+                <span class="text-xs text-gray-500">Realtime preview</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button class="inline-flex items-center gap-1 rounded-full bg-white border border-gray-200 text-xs text-gray-700 px-2.5 py-1 hover:bg-gray-50">
+                <iconify-icon icon="solar:maximize-linear" class="w-3.5 h-3.5"></iconify-icon>
+                <span>Fit</span>
+              </button>
+              <button class="inline-flex items-center justify-center rounded-full w-7 h-7 border border-gray-200 bg-white hover:bg-gray-50 text-gray-600">
+                <iconify-icon icon="solar:eye-linear" class="w-3.5 h-3.5"></iconify-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Canvas body -->
+          <div class="flex-1 flex flex-col p-3 sm:p-4 gap-3">
+            <!-- Welcome / hero in canvas -->
+            <div class="relative flex-1 flex items-center justify-center rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 overflow-hidden">
+              <div class="absolute inset-0 pointer-events-none">
+                <div class="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-gradient-to-br from-indigo-400/30 to-sky-300/0 blur-3xl"></div>
+                <div class="absolute -bottom-8 -right-6 w-40 h-40 rounded-full bg-gradient-to-tr from-emerald-400/25 to-cyan-300/0 blur-3xl"></div>
+              </div>
+              <div class="relative w-full h-full flex items-center justify-center">
+                <div class="max-w-sm w-full flex flex-col items-center text-center gap-3">
+                  <div class="inline-flex items-center justify-center rounded-full border border-dashed border-gray-300 bg-white/70 backdrop-blur px-3 py-1.5">
+                    <iconify-icon icon="solar:magic-stick-3-linear" class="w-4 h-4 text-indigo-500"></iconify-icon>
+                    <span class="ml-1.5 text-xs font-medium text-gray-700">Welcome to PromptCraft</span>
+                  </div>
+                  <h1 class="text-xl sm:text-2xl font-semibold tracking-tight text-gray-900">
+                    Sketch 3D scenes with natural language.
+                  </h1>
+                  <p class="text-sm sm:text-base text-gray-600">
+                    Describe your idea, tweak cameras and materials, then export frames ready for your design system or motion pipeline.
+                  </p>
+
+                  <!-- Quick idea chips -->
+                  <div class="flex flex-wrap justify-center gap-1.5 mt-1">
+                    <button class="inline-flex items-center gap-1 rounded-full bg-white border border-gray-200 text-xs text-gray-700 px-2.5 py-1 hover:bg-gray-50">
+                      <iconify-icon icon="solar:stars-line-duotone" class="w-3.5 h-3.5 text-indigo-500"></iconify-icon>
+                      <span>Futuristic dashboard</span>
+                    </button>
+                    <button class="inline-flex items-center gap-1 rounded-full bg-white border border-gray-200 text-xs text-gray-700 px-2.5 py-1 hover:bg-gray-50">
+                      <iconify-icon icon="solar:planet-3-linear" class="w-3.5 h-3.5 text-sky-500"></iconify-icon>
+                      <span>Isometric city</span>
+                    </button>
+                    <button class="inline-flex items-center gap-1 rounded-full bg-white border border-gray-200 text-xs text-gray-700 px-2.5 py-1 hover:bg-gray-50">
+                      <iconify-icon icon="solar:camera-linear" class="w-3.5 h-3.5 text-emerald-500"></iconify-icon>
+                      <span>Studio product shot</span>
+                    </button>
+                  </div>
+
+                  <!-- Status -->
+                  <div class="flex items-center justify-center gap-2 mt-2">
+                    <div class="flex items-center gap-1.5 rounded-full bg-white/80 border border-gray-200 px-2 py-1">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      <span class="text-[0.7rem] font-medium text-gray-600">Preview engine ready</span>
+                    </div>
+                    <button class="hidden sm:inline-flex items-center justify-center rounded-full w-6 h-6 bg-gray-900 text-gray-50 hover:bg-gray-800">
+                      <iconify-icon icon="solar:info-circle-linear" class="w-3.5 h-3.5"></iconify-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom mini strip inside canvas area -->
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5 text-[0.7rem] text-gray-500">
+                <iconify-icon icon="solar:cpu-bolt-linear" class="w-3.5 h-3.5"></iconify-icon>
+                <span>Using smart defaults &amp; non-destructive adjustments.</span>
+              </div>
+              <div class="hidden sm:flex items-center gap-1.5">
+                <button class="inline-flex items-center gap-1 rounded-full bg-gray-50 border border-gray-200 text-[0.7rem] text-gray-700 px-2 py-1 hover:bg-white">
+                  <iconify-icon icon="solar:bookmark-linear" class="w-3 h-3"></iconify-icon>
+                  <span>Save preset</span>
+                </button>
+                <button class="inline-flex items-center gap-1 rounded-full bg-gray-50 border border-gray-200 text-[0.7rem] text-gray-700 px-2 py-1 hover:bg-white">
+                  <iconify-icon icon="solar:share-linear" class="w-3 h-3"></iconify-icon>
+                  <span>Share link</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- RIGHT SIDEBAR -->
+        <section class="flex flex-col border border-gray-200 bg-white shadow-md rounded-2xl overflow-hidden">
+          <!-- Header / toggle -->
+          <div class="border-b border-gray-200 bg-gray-50/80 px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <iconify-icon icon="solar:settings-line-duotone" class="w-4 h-4 text-gray-700"></iconify-icon>
+              <div class="flex flex-col leading-tight">
+                <span class="text-xs font-medium text-gray-700 tracking-tight">Inspector</span>
+                <span class="text-xs text-gray-500">Canvas &amp; camera</span>
+              </div>
+            </div>
+            <!-- Show/hide canvas frame toggle -->
+            <label class="inline-flex items-center gap-1.5 cursor-pointer select-none">
+              <span class="text-[0.7rem] text-gray-600">Frame</span>
+              <span class="relative inline-flex items-center">
+                <input type="checkbox" class="peer sr-only" checked="">
+                <span class="w-8 h-4 rounded-full bg-gray-300 peer-checked:bg-gray-900 transition-colors"></span>
+                <span class="absolute left-0.5 top-0.5 w-3 h-3 rounded-full bg-white shadow transform peer-checked:translate-x-4 transition-transform"></span>
+              </span>
+            </label>
+          </div>
+
+          <!-- Content -->
+          <div class="flex-1 flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 overflow-y-auto">
+            <!-- Canvas size controls -->
+            <section class="flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <h3 class="text-xs font-semibold tracking-tight text-gray-900">Canvas size</h3>
+                <button class="text-[0.7rem] text-gray-500 hover:text-gray-800 inline-flex items-center gap-1">
+                  <iconify-icon icon="solar:refresh-linear" class="w-3 h-3"></iconify-icon>
+                  <span>Reset</span>
+                </button>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div class="flex flex-col gap-1">
+                  <label class="text-[0.7rem] text-gray-600">Width</label>
+                  <div class="relative">
+                    <input type="number" value="1440" class="w-full rounded-lg border border-gray-200 bg-gray-50/80 focus:bg-white text-sm text-gray-800 px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-gray-900/10">
+                    <span class="pointer-events-none absolute inset-y-0 right-2 flex items-center text-[0.7rem] text-gray-400">px</span>
+                  </div>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-[0.7rem] text-gray-600">Height</label>
+                  <div class="relative">
+                    <input type="number" value="900" class="w-full rounded-lg border border-gray-200 bg-gray-50/80 focus:bg-white text-sm text-gray-800 px-2.5 py-1.5 outline-none focus:ring-2 focus:ring-gray-900/10">
+                    <span class="pointer-events-none absolute inset-y-0 right-2 flex items-center text-[0.7rem] text-gray-400">px</span>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <div class="inline-flex items-center gap-1.5 text-[0.7rem] text-gray-500">
+                  <iconify-icon icon="solar:resize-square-linear" class="w-3 h-3"></iconify-icon>
+                  <span>16:10 aspect ratio</span>
+                </div>
+                <button class="inline-flex items-center gap-1 rounded-full bg-gray-50 border border-gray-200 text-[0.7rem] text-gray-700 px-2 py-1 hover:bg-white">
+                  <iconify-icon icon="solar:devices-linear" class="w-3 h-3"></iconify-icon>
+                  <span>Presets</span>
+                </button>
+              </div>
+            </section>
+
+            <!-- Materials grid -->
+            <section class="flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <h3 class="text-xs font-semibold tracking-tight text-gray-900">Materials</h3>
+                <button class="inline-flex items-center gap-1 rounded-full bg-gray-50 border border-gray-200 text-[0.7rem] text-gray-700 px-1.5 py-0.5 hover:bg-white">
+                  <iconify-icon icon="solar:add-circle-linear" class="w-3 h-3"></iconify-icon>
+                  <span>New</span>
+                </button>
+              </div>
+              <div class="grid grid-cols-4 gap-2">
+                <!-- Material placeholder cards -->
+                <button class="group flex flex-col items-center gap-1 rounded-xl border border-gray-200 bg-gray-50/80 hover:bg-white hover:shadow-sm transition p-1.5">
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-gray-300 to-gray-100 border border-white shadow-inner"></div>
+                  <span class="text-[0.65rem] text-gray-700">Matte</span>
+                </button>
+                <button class="group flex flex-col items-center gap-1 rounded-xl border border-gray-200 bg-gray-50/80 hover:bg-white hover:shadow-sm transition p-1.5">
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-sky-300 to-indigo-500 border border-white shadow-inner"></div>
+                  <span class="text-[0.65rem] text-gray-700">Glass</span>
+                </button>
+                <button class="group flex flex-col items-center gap-1 rounded-xl border border-gray-200 bg-gray-50/80 hover:bg-white hover:shadow-sm transition p-1.5">
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-zinc-500 to-zinc-200 border border-white shadow-inner"></div>
+                  <span class="text-[0.65rem] text-gray-700">Metal</span>
+                </button>
+                <button class="group flex flex-col items-center gap-1 rounded-xl border border-dashed border-gray-300 bg-gray-50/60 hover:bg-white hover:border-gray-400 transition p-1.5">
+                  <div class="w-10 h-10 rounded-full border border-dashed border-gray-300 flex items-center justify-center">
+                    <iconify-icon icon="solar:add-square-linear" class="w-4 h-4 text-gray-400"></iconify-icon>
+                  </div>
+                  <span class="text-[0.65rem] text-gray-500">Custom</span>
+                </button>
+              </div>
+            </section>
+
+            <!-- Camera settings with tabs -->
+            <section class="flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <h3 class="text-xs font-semibold tracking-tight text-gray-900">Camera</h3>
+                <span class="inline-flex items-center gap-1 rounded-full bg-gray-50 border border-gray-200 text-[0.65rem] text-gray-600 px-1.5 py-0.5">
+                  <iconify-icon icon="solar:camera-linear" class="w-3 h-3"></iconify-icon>
+                  <span>Rig v1</span>
+                </span>
+              </div>
+              <!-- Camera tabs -->
+              <div class="inline-flex rounded-full bg-gray-100 border border-gray-200 p-0.5 w-full sm:w-auto">
+                <button class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 rounded-full bg-white text-xs font-medium text-gray-900 px-2.5 py-1.5 shadow-sm">
+                  <iconify-icon icon="solar:3d-cube-center-linear" class="w-3.5 h-3.5"></iconify-icon>
+                  <span>Isometric</span>
+                </button>
+                <button class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 rounded-full text-xs font-medium text-gray-600 px-2.5 py-1.5 hover:bg-white/60">
+                  <iconify-icon icon="solar:camera-2-linear" class="w-3.5 h-3.5"></iconify-icon>
+                  <span>Perspective</span>
+                </button>
+              </div>
+
+              <!-- Distortion slider -->
+              <div class="flex flex-col gap-1.5 mt-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-[0.7rem] text-gray-600">Lens distortion</span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[0.7rem] font-medium text-gray-800">18%</span>
+                    <div class="h-4 w-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center">
+                      <span class="w-5 h-2 rounded-full bg-gradient-to-r from-emerald-400 via-sky-400 to-indigo-500"></span>
+                    </div>
+                  </div>
+                </div>
+                <div class="relative flex items-center">
+                  <input type="range" min="0" max="100" value="18" class="w-full h-1.5 rounded-full accent-gray-900 bg-gradient-to-r from-emerald-400 via-sky-400 to-indigo-500">
+                </div>
+                <div class="flex items-center justify-between text-[0.65rem] text-gray-500">
+                  <span>Orthographic</span>
+                  <span>Cinematic</span>
+                </div>
+              </div>
+
+              <!-- Extra camera params -->
+              <div class="grid grid-cols-3 gap-2 mt-1">
+                <div class="flex flex-col gap-1">
+                  <label class="text-[0.7rem] text-gray-600">FOV</label>
+                  <div class="relative">
+                    <input type="number" value="35" class="w-full rounded-lg border border-gray-200 bg-gray-50/80 focus:bg-white text-sm text-gray-800 px-2 py-1.5 outline-none focus:ring-2 focus:ring-gray-900/10">
+                    <span class="pointer-events-none absolute inset-y-0 right-2 flex items-center text-[0.7rem] text-gray-400">mm</span>
+                  </div>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-[0.7rem] text-gray-600">Tilt</label>
+                  <input type="number" value="-12" class="w-full rounded-lg border border-gray-200 bg-gray-50/80 focus:bg-white text-sm text-gray-800 px-2 py-1.5 outline-none focus:ring-2 focus:ring-gray-900/10">
+                </div>
+                <div class="flex flex-col gap-1">
+                  <label class="text-[0.7rem] text-gray-600">Roll</label>
+                  <input type="number" value="4" class="w-full rounded-lg border border-gray-200 bg-gray-50/80 focus:bg-white text-sm text-gray-800 px-2 py-1.5 outline-none focus:ring-2 focus:ring-gray-900/10">
+                </div>
+              </div>
+            </section>
+
+            <!-- Logo strip using Simple Icons -->
+            <section class="mt-1 border-t border-gray-200 pt-2 flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[0.65rem] text-gray-500">Works great with</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <iconify-icon icon="simple-icons:figma" class="w-8 h-3 text-gray-500"></iconify-icon>
+                <iconify-icon icon="simple-icons:blender" class="w-8 h-3 text-gray-500"></iconify-icon>
+                <iconify-icon icon="simple-icons:adobeaftereffects" class="w-8 h-3 text-gray-500"></iconify-icon>
+              </div>
+            </section>
+          </div>
+        </section>
+      </div>
+
+      <!-- CHAT CONTAINER -->
+      <section class="border-t border-gray-200 bg-white/95 backdrop-blur shadow-md">
+        <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3">
+          <div class="flex flex-col gap-2">
+            <!-- History + model row -->
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5">
+                <button class="inline-flex items-center justify-center rounded-full w-7 h-7 border border-gray-200 bg-gray-50 text-gray-600 hover:bg-white">
+                  <iconify-icon icon="solar:arrow-left-linear" class="w-3.5 h-3.5"></iconify-icon>
+                </button>
+                <button class="inline-flex items-center justify-center rounded-full w-7 h-7 border border-gray-200 bg-gray-50 text-gray-600 hover:bg-white">
+                  <iconify-icon icon="solar:arrow-right-linear" class="w-3.5 h-3.5"></iconify-icon>
+                </button>
+                <span class="text-[0.7rem] text-gray-500">Navigate prompt history</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button class="hidden sm:inline-flex items-center gap-1.5 text-[0.7rem] text-gray-500 hover:text-gray-800">
+                  <iconify-icon icon="solar:clock-circle-linear" class="w-3 h-3"></iconify-icon>
+                  <span>Last saved 2m ago</span>
+                </button>
+                <button class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 border border-gray-200 text-[0.7rem] text-gray-700 px-2.5 py-1 hover:bg-white">
+                  <iconify-icon icon="solar:magic-stick-3-linear" class="w-3 h-3"></iconify-icon>
+                  <span>Prompt presets</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Text area row -->
+            <div class="flex items-end gap-2">
+              <div class="flex-1 relative">
+                <textarea rows="2" class="w-full resize-none rounded-2xl border border-gray-200 bg-gray-50/80 focus:bg-white text-sm text-gray-800 px-3 sm:px-4 py-2.5 outline-none focus:ring-2 focus:ring-gray-900/10" placeholder="Describe the 3D object or scene you want to prototype. Include style, lighting, camera, and materials…"></textarea>
+                <!-- attached badges / hint -->
+                <div class="absolute bottom-1.5 left-3 flex items-center gap-1 text-[0.65rem] text-gray-400 pointer-events-none">
+                  <span>Tip: “Isometric product shot with soft studio lighting and glass accents.”</span>
+                </div>
+              </div>
+
+              <!-- Attach + send -->
+              <div class="flex flex-col items-end gap-1.5">
+                <div class="flex items-center gap-1.5">
+                  <button class="inline-flex items-center justify-center rounded-full w-8 h-8 border border-gray-200 bg-gray-50 text-gray-600 hover:bg-white">
+                    <iconify-icon icon="solar:paperclip-linear" class="w-4 h-4"></iconify-icon>
+                  </button>
+                  <button class="inline-flex items-center justify-center rounded-full w-8 h-8 border border-gray-200 bg-gray-50 text-gray-600 hover:bg-white">
+                    <iconify-icon icon="solar:image-linear" class="w-4 h-4"></iconify-icon>
+                  </button>
+                  <button class="inline-flex items-center justify-center rounded-full w-9 h-9 bg-gray-900 text-gray-50 shadow-md hover:bg-gray-800">
+                    <iconify-icon icon="solar:arrow-up-linear" class="w-4 h-4"></iconify-icon>
+                  </button>
+                </div>
+                <span class="text-[0.65rem] text-gray-400">
+                  Generated frames update non-destructively. No assets are overwritten.
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+</body></html>
